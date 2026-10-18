@@ -17,6 +17,9 @@ env/
 .env.*
 !.env.example
 
+# Personal data — local knowledge base, never commit (see .opencode/rules/privacy.md)
+data/
+
 # Tooling caches
 .pytest_cache/
 .ruff_cache/

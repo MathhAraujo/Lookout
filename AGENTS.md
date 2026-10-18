@@ -10,7 +10,7 @@ Lookout is an AI agent that automatically applies to job openings on behalf of t
 
 - `opencode.jsonc` — project config: loads rules from `.opencode/rules/`, the Superpowers plugin (methodology skills) and the Context7 MCP server (library docs).
 - `AGENTS.md` — this file: general repository guidance.
-- `.opencode/rules/` — specific rules (language, git workflow, stack, conventions). `.md` files here load automatically.
+- `.opencode/rules/` — specific rules (language, git workflow, stack, privacy, conventions). `.md` files here load automatically.
 - `.opencode/skills/` — reusable skills. Each skill is a folder with a `SKILL.md` and frontmatter with `name` and `description`.
 
 ## General rules

@@ -24,6 +24,13 @@
         "type": "remote",
         "url": "https://mcp.context7.com/mcp",
         "oauth": false
+      },
+      // Playwright: browser automation for prototyping and testing
+      // job-board flows (selectors, form filling) during development.
+      // First use may require: npx playwright install chromium
+      "playwright": {
+        "type": "local",
+        "command": ["npx", "-y", "@playwright/mcp@latest"]
       }
     }
   },
