@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Rules: files loaded as persistent instructions, in addition to AGENTS.md.
+  // Any .md added to .opencode/rules/ takes effect automatically.
+  "instructions": [
+    ".opencode/rules/**/*.md"
+  ],
+  // Plugins: Superpowers automatically registers its skills
+  // (brainstorming, writing-plans, systematic-debugging, test-driven-development, etc.)
+  // Requires restarting OpenCode after changes. To pin a version:
+  // "superpowers@git+https://github.com/obra/superpowers.git#v7.0.0"
+  "plugins": [
+    "superpowers@git+https://github.com/obra/superpowers.git"
+  ],
+  // MCP servers
+  "mcp": {
+    "servers": {
+      // Context7: fetches up-to-date library/framework documentation.
+      // Works anonymously (lower rate limits). For higher limits, create a key
+      // at https://context7.com, set the CONTEXT7_API_KEY environment variable
+      // and add to the object above:
+      // "headers": { "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}" }
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "oauth": false
+      }
+    }
+  },
+  // Skills: .opencode/skills/ is discovered automatically.
+  // Use the array below for extra sources (local folders or HTTP catalogs):
+  // "skills": [
+  //   "./team-skills",
+  //   "https://example.com/opencode/skills/"
+  // ]
+}
