@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "id": 123,
+      "company": {"display_name": "Globex"},
+      "title": "Senior Python Engineer",
+      "location": {"display_name": "São Paulo, Brazil"},
+      "redirect_url": "https://www.adzuna.com.br/details/123",
+      "description": "Build APIs for fictional products.",
+      "created": "2026-10-18T12:00:00Z"
+    },
+    {
+      "id": 456,
+      "company": {"display_name": "Initech"},
+      "title": "Backend Developer",
+      "location": {"display_name": "Remote"},
+      "redirect_url": "https://www.adzuna.com.br/details/456",
+      "description": "Maintain fictional services.",
+      "created": "2026-10-17T09:30:00Z"
+    },
+    {
+      "id": 789,
+      "company": {"display_name": "Umbrella Labs"},
+      "title": "Data Engineer",
+      "location": {"display_name": "Remote"},
+      "description": "Missing required URL."
+    }
+  ]
+}
