@@ -1,0 +1,6 @@
+---
+items:
+  - Python
+  - FastAPI
+  - PostgreSQL
+---
