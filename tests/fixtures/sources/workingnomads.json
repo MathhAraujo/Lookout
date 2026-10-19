@@ -1,0 +1,27 @@
+[
+  {
+    "id": "wn-123",
+    "company_name": "Globex",
+    "title": "Senior Python Engineer",
+    "location": "Worldwide",
+    "url": "https://www.workingnomads.com/jobs/wn-123",
+    "description": "Build APIs for fictional products.",
+    "pubdate": "2026-10-18T12:00:00Z"
+  },
+  {
+    "id": "wn-456",
+    "company_name": "Initech",
+    "title": "Backend Developer",
+    "location": "Remote",
+    "url": "https://www.workingnomads.com/jobs/wn-456",
+    "description": "Maintain fictional services.",
+    "pubdate": "2026-10-17T09:30:00+00:00"
+  },
+  {
+    "id": "wn-bad",
+    "company_name": "Umbrella Labs",
+    "title": "Data Engineer",
+    "location": "Remote",
+    "description": "Missing required URL."
+  }
+]
