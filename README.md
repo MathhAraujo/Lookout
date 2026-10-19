@@ -5,6 +5,39 @@ Primarily written in Python.
 
 > Status: initial setup. Documentation will grow with the codebase.
 
+## Running (Phase 1 MVP)
+
+Prerequisites: Docker with the Compose plugin. To start the local API, PostgreSQL,
+and worker:
+
+```bash
+cp .env.example .env
+mkdir -p data
+cp -r templates/kb data/kb
+```
+
+Set `OPENROUTER_API_KEY` in `.env` before generating tailored resumes. Adzuna and
+Gmail collection are optional and require their respective credentials.
+
+```bash
+docker compose up -d --build
+curl http://localhost:8000/health
+```
+
+Collect synchronously or enqueue source jobs for the worker:
+
+```bash
+docker compose exec api python -m lookout.cli collect
+docker compose exec api python -m lookout.cli collect --source remoteok
+docker compose exec api python -m lookout.cli collect --source remoteok --enqueue
+docker compose exec api python -m lookout.cli list-openings
+docker compose exec api python -m lookout.cli tailor <OPENING_ID>
+```
+
+The API also supports `POST /collect` to enqueue all enabled sources or one
+named source, `GET /openings` to list results, and
+`POST /openings/{opening_id}/tailor` to enqueue resume generation.
+
 ## OpenCode setup
 
 Agent configuration structure:

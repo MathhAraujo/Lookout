@@ -80,6 +80,11 @@ def kb() -> KnowledgeBase:
 
 
 @pytest.fixture
+def settings() -> Settings:
+    return get_settings()
+
+
+@pytest.fixture
 def opening_fixture(session: Session) -> Opening:
     return insert_opening(
         session,
@@ -95,3 +100,22 @@ def opening_fixture(session: Session) -> Opening:
             raw={},
         ),
     )
+
+
+@pytest.fixture
+def client(settings: Settings, session: Session):
+    from fastapi.testclient import TestClient
+    from lookout.api import create_app, get_session
+
+    app = create_app(settings)
+
+    def override_get_session() -> Iterator[Session]:
+        yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.state.engine.dispose()
