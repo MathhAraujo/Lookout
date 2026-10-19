@@ -2,7 +2,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 import pytest
-from lookout.openings import get_opening, insert_opening
+from lookout.openings import (
+    get_opening,
+    insert_opening,
+    list_dedup_keys,
+    list_openings,
+)
 from sqlalchemy.exc import IntegrityError
 
 
@@ -54,3 +59,10 @@ def test_same_source_external_id_cannot_be_inserted_twice(session):
 
     with pytest.raises(IntegrityError):
         insert_opening(session, raw)
+
+
+def test_list_openings_and_dedup_keys(session):
+    insert_opening(session, make_raw_opening())
+
+    assert list_openings(session)[0].company == "Globex"
+    assert list_dedup_keys(session) == ["globex|backend engineer"]

@@ -27,3 +27,22 @@ class Opening(SQLModel, table=True):
     collected_at: datetime = Field(default_factory=utcnow, sa_type=DateTime(timezone=True))
     dedup_key: str = Field(index=True)
     raw: dict = Field(default_factory=dict, sa_type=JSONB)
+
+
+class Job(SQLModel, table=True):
+    __tablename__ = "jobs"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    type: str
+    payload: dict = Field(default_factory=dict, sa_type=JSONB)
+    status: str = Field(default="pending", index=True)
+    run_at: datetime = Field(default_factory=utcnow, sa_type=DateTime(timezone=True))
+    attempts: int = 0
+    max_attempts: int = 3
+    last_error: str | None = Field(default=None)
+    created_at: datetime = Field(default_factory=utcnow, sa_type=DateTime(timezone=True))
+    updated_at: datetime = Field(
+        default_factory=utcnow,
+        sa_type=DateTime(timezone=True),
+        sa_column_kwargs={"onupdate": utcnow},
+    )
