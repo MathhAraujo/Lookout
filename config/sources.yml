@@ -1,0 +1,18 @@
+sources:
+  remoteok: {enabled: true, interval_minutes: 360}
+  remotive: {enabled: true, interval_minutes: 360}
+  arbeitnow: {enabled: true, interval_minutes: 360}
+  jobicy: {enabled: true, interval_minutes: 360}
+  adzuna:
+    enabled: false
+    interval_minutes: 720
+    countries: ["br", "us"]
+    queries: ["python developer", "backend engineer"]
+  weworkremotely: {enabled: true, interval_minutes: 360}
+  workingnomads: {enabled: true, interval_minutes: 360}
+  himalayas: {enabled: true, interval_minutes: 360}
+  hn_whoishiring: {enabled: true, interval_minutes: 720}
+  greenhouse: {enabled: true, interval_minutes: 360, companies: {}}
+  lever: {enabled: true, interval_minutes: 360, companies: {}}
+  workable: {enabled: false, interval_minutes: 360, companies: {}}
+  linkedin_email: {enabled: false, interval_minutes: 360}
