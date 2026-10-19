@@ -97,7 +97,7 @@ docker-compose.yml  pyproject.toml  .env.example  .dockerignore
 **Interfaces:**
 - Produces: `Settings` in `lookout/config.py` — a `pydantic_settings.BaseSettings` with fields: `database_url: str = "postgresql+psycopg://lookout:lookout@postgres:5432/lookout"`, `openrouter_api_key: str = ""`, `openrouter_tailoring_model: str = "anthropic/claude-3.5-haiku"`, `adzuna_app_id: str = ""`, `adzuna_app_key: str = ""`, `gmail_credentials_file: Path = Path("data/gmail_credentials.json")`, `gmail_token_file: Path = Path("data/gmail_token.json")`, `gmail_label: str = "lookout/jobs"`, `kb_path: Path = Path("data/kb")`, `artifacts_dir: Path = Path("data/artifacts")`, `sources_config: Path = Path("config/sources.yml")`, `worker_poll_seconds: int = 5`, `dedup_company_threshold: float = 90.0`, `dedup_title_threshold: float = 90.0`; plus `get_settings() -> Settings` (`functools.lru_cache`). `create_app() -> FastAPI` in `lookout/api.py` with `GET /health -> {"status": "ok"}`.
 
-- [ ] **Step 1: Write the failing smoke test**
+- [x] **Step 1: Write the failing smoke test**
 
 ```python
 # tests/unit/test_health.py
@@ -109,19 +109,19 @@ def test_health():
     assert client.get("/health").json() == {"status": "ok"}
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/unit/test_health.py -v` (inside container once built; fails locally with `ModuleNotFoundError` before that — acceptable, note it).
 
-- [ ] **Step 3: Create the scaffold**
+- [x] **Step 3: Create the scaffold**
 
 `pyproject.toml`: `[project]` name `lookout`, `requires-python = ">=3.11"`, dependencies: `fastapi`, `uvicorn[standard]`, `sqlmodel`, `alembic`, `psycopg[binary]`, `apscheduler>=3.10,<4`, `httpx`, `pydantic-settings`, `jinja2`, `weasyprint`, `rapidfuzz`, `feedparser`, `python-frontmatter`, `pyyaml`, `google-api-python-client`, `google-auth-oauthlib`; `[project.optional-dependencies] dev = ["pytest", "ruff", "pypdf"]`; `[tool.hatch.build.targets.wheel] packages = ["apps/api/lookout"]`; `[tool.ruff] line-length = 100, target-version = "py311"`; `[tool.pytest.ini_options] testpaths = ["tests"]`. `config.py` with `Settings`/`get_settings()` as above. `api.py` with `create_app()` (health route only). `worker.py` with `main()` that logs "worker started" and sleeps in a loop. Dockerfiles: `FROM python:3.12-slim`, `apt-get install -y --no-install-recommends libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libffi-dev`, `WORKDIR /app`, copy `pyproject.toml` + `apps/api/lookout`, `pip install --no-cache-dir -e ".[dev]"`; api CMD runs alembic then uvicorn (alembic not present yet — for this task the CMD is `sh -c "uvicorn lookout.api:create_app --factory --host 0.0.0.0 --port 8000"`; Task 2 adds the alembic prefix), worker CMD `python -m lookout.worker`. `docker-compose.yml` as in the architecture note: `postgres` (postgres:16-alpine, user/pass/db `lookout`, volume `pgdata`, healthcheck `pg_isready -U lookout`), `api` (build context `.`, dockerfile `apps/api/Dockerfile`, `env_file: .env`, volumes `.:/app` and `./data:/app/data`, port `8000:8000`, `depends_on: postgres: service_healthy`, healthcheck `python -c "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"`), `worker` (same build pattern, dockerfile `apps/worker/Dockerfile`, no ports, `depends_on: api: service_healthy`). `.env.example` mirroring the `Settings` fields (with `DATABASE_URL=postgresql+psycopg://lookout:lookout@postgres:5432/lookout`). `.dockerignore`: `.git`, `.venv`, `data`, `**/__pycache__`, `.env`, `tests`. `config/sources.yml` created here with all 13 sources per the Global Constraints shape (Task 5 consumes it). Update `.opencode/rules/stack.md` as described above.
 
-- [ ] **Step 4: Build and verify green**
+- [x] **Step 4: Build and verify green**
 
 Run: `cp .env.example .env`; `docker compose up -d --build`; then `docker compose exec api pytest tests/unit/test_health.py -v` → PASS; `docker compose exec api ruff check .` → clean; `docker compose ps` → `postgres`, `api` healthy, `worker` running. (Prerequisite: Docker Desktop running.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "chore: scaffold monorepo, tooling and docker compose skeleton"
@@ -144,7 +144,7 @@ git add -A && git commit -m "chore: scaffold monorepo, tooling and docker compos
   - `tests/conftest.py`: session-scoped test database `lookout_test` created from `TEST_DATABASE_URL` (default derived from `DATABASE_URL` with `_test` suffix); **guard: raise if the test URL's database name does not end with `_test`**; per-test function-scoped `session` fixture with `metadata.drop_all`/`create_all` isolation.
 - Consumes: `Settings` from Task 1. `RawOpening` from Task 5 (type hint only — use string annotation / `TYPE_CHECKING`; Task 5 makes it concrete).
 
-- [ ] **Step 1: Write the failing integration test**
+- [x] **Step 1: Write the failing integration test**
 
 ```python
 # tests/integration/test_openings_repo.py
@@ -160,21 +160,21 @@ def test_same_source_external_id_cannot_be_inserted_twice(session):
 ```
 (`make_raw_opening` is a local test helper building the `RawOpening` dataclass — Task 5's interface; write the helper against the signature pinned there: `RawOpening(source, external_id, company, title, location, url, description, posted_at, raw)`.)
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/integration/test_openings_repo.py -v`
 Expected: FAIL with `ModuleNotFoundError` (neither `lookout.models` nor `lookout.collectors.base` exists yet; either import error is acceptable — the helper import of `RawOpening` resolves when Task 5 lands, since the helper is written against the signature pinned there).
 
-- [ ] **Step 3: Implement models, db, repository, Alembic**
+- [x] **Step 3: Implement models, db, repository, Alembic**
 
 `alembic init alembic` shape at repo root; `alembic.ini` with `script_location = alembic`, `sqlalchemy.url` left empty; `alembic/env.py` reads `get_settings().database_url` and targets `SQLModel.metadata`. Models exactly as the Interfaces block. Migration `0001_create_openings` autogenerated then reviewed by hand. Repository functions as pinned.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose up -d --build` (new api CMD), then `docker compose exec api alembic upgrade head`, then `docker compose exec api pytest tests/integration -v`
 Expected: 2 PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add openings state database with alembic migrations" && git push origin HEAD
@@ -199,7 +199,7 @@ git add -A && git commit -m "feat: add openings state database with alembic migr
   - `fail(session: Session, job: Job, error: str) -> None` — if `job.attempts >= job.max_attempts` → status `failed`; else back to `pending` with `run_at = now + timedelta(minutes=2 ** job.attempts)`; always sets `last_error`.
   - `reap_stale(session: Session, *, stale_after: timedelta = timedelta(minutes=30)) -> int` — `running` jobs with `updated_at` older than `stale_after` return to `pending`; returns count.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/integration/test_queue.py
@@ -232,21 +232,21 @@ def test_reap_stale_returns_crashed_jobs_to_pending(session):
 ```
 (`engine` fixture: add to `tests/conftest.py`, reusing the test-DB engine.)
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/integration/test_queue.py -v`
 Expected: FAIL (`lookout.queue` does not exist).
 
-- [ ] **Step 3: Implement `queue.py`, `Job` model and migration `0002_create_jobs`**
+- [x] **Step 3: Implement `queue.py`, `Job` model and migration `0002_create_jobs`**
 
 `claim_next`: `select(Job).where(status=="pending", run_at<=now).order_by(created_at).with_for_update(skip_locked=True).limit(1)`. Backoff exactly `2 ** attempts` minutes as pinned.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api alembic upgrade head && docker compose exec api pytest tests/integration -v`
 Expected: all PASS (Task 2 + Task 3).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add db-backed job queue" && git push origin HEAD
@@ -269,7 +269,7 @@ git add -A && git commit -m "feat: add db-backed job queue" && git push origin H
   - `dedup_key(company: str, title: str) -> str` — `f"{normalize_company(company)}|{normalize_title(title)}"`.
   - `is_duplicate(candidate_key: str, existing_keys: Sequence[str], *, company_threshold: float = 90.0, title_threshold: float = 90.0) -> bool` — splits keys on `"|"`; duplicate when any existing key has `rapidfuzz.fuzz.token_set_ratio` on the **company** part ≥ `company_threshold` **and** `fuzz.token_sort_ratio` on the **title** part ≥ `title_threshold`. (token_set for company tolerates "Mercado Livre" ⊂ "Mercado Livre Brasil"; token_sort for title prevents "Backend Engineer" ⊂ "Senior Backend Engineer" from false-matching — Review Focus #1.)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/unit/test_normalize.py
@@ -298,19 +298,19 @@ def test_is_duplicate_keeps_distinct_roles_at_same_company():
     assert not is_duplicate(dedup_key("Acme", "Product Manager"), existing)
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/test_normalize.py tests/unit/test_dedup.py -v`
 Expected: FAIL (`lookout.normalize` does not exist).
 
-- [ ] **Step 3: Implement `normalize.py` and `dedup.py`** per the pinned signatures and token rules.
+- [x] **Step 3: Implement `normalize.py` and `dedup.py`** per the pinned signatures and token rules.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add normalization and fuzzy dedup" && git push origin HEAD
@@ -353,7 +353,7 @@ sources:
   linkedin_email:  {enabled: false, interval_minutes: 360}
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/integration/test_ingest.py
@@ -381,19 +381,19 @@ def test_collect_all_isolates_failing_source(session):
     assert results["broken"].errors and results["ok"].inserted == 1
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/integration/test_ingest.py -v`
 Expected: FAIL (`lookout.collectors` does not exist).
 
-- [ ] **Step 3: Implement `collectors/base.py` and `ingest.py`** per the pinned signatures; finalize `config/sources.yml`.
+- [x] **Step 3: Implement `collectors/base.py` and `ingest.py`** per the pinned signatures; finalize `config/sources.yml`.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/integration -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add collector framework and ingestion pipeline" && git push origin HEAD
@@ -416,7 +416,7 @@ git add -A && git commit -m "feat: add collector framework and ingestion pipelin
   - **Jobicy**: `GET https://jobicy.com/api/v2/remote-jobs`; `jobs[]`: `companyName`, `jobTitle`→title, `jobGeo`→location, `url`, `jobDescription`→description, `pubDate`, `id`.
   - All parsers: malformed entries are skipped (never raise); `source` set to the collector `name`.
 
-- [ ] **Step 1: Write fixtures + failing tests**
+- [x] **Step 1: Write fixtures + failing tests**
 
 Fixtures with fictional data (privacy rule), e.g. `remoteok.json`: metadata object + 2 jobs ("Globex"/"Senior Python Engineer", "Initech"/"Backend Developer") + 1 malformed entry missing `url`. One test per source:
 
@@ -430,19 +430,19 @@ def test_parse_remoteok_maps_fields_and_skips_metadata():
 ```
 (Analogous tests for `parse_remotive`, `parse_arbeitnow`, `parse_jobicy` asserting company/title/location/url/description/posted_at/external_id from their fixtures.)
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/collectors/test_tier0_api.py -v`
 Expected: FAIL (modules do not exist).
 
-- [ ] **Step 3: Implement the four collectors** (`fetch` via httpx with 30 s timeout; `parse_*` pure functions per the pinned mappings).
+- [x] **Step 3: Implement the four collectors** (`fetch` via httpx with 30 s timeout; `parse_*` pure functions per the pinned mappings).
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit/collectors -v`
 Expected: 4 PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add tier 0 json api collectors" && git push origin HEAD
@@ -463,7 +463,7 @@ git add -A && git commit -m "feat: add tier 0 json api collectors" && git push o
   - **Working Nomads** (JSON, `GET https://www.workingnomads.com/api/exposed_jobs/`, verified 2026-10-18): array items: `company_name`, `title`, `location`, `url`, `description`, `pubdate`... (field names per fixture recorded from the live API; `id`→external_id).
   - **Himalayas** (RSS, `GET https://himalayas.app/jobs/rss`, verified 2026-10-18): namespaced fields `himalayasJobs:companyName`→company, `himalayasJobs:locationRestriction`→location; `title`, `link`, `content:encoded`→description (fall back to `description`), `pubDate`, `guid`→external_id. Use `feedparser` (handles the custom namespace).
 
-- [ ] **Step 1: Write fixtures + failing tests**
+- [x] **Step 1: Write fixtures + failing tests**
 
 ```python
 def test_parse_weworkremotely_splits_company_and_title():
@@ -473,19 +473,19 @@ def test_parse_weworkremotely_splits_company_and_title():
 ```
 (Analogous tests for `parse_workingnomads` and `parse_himalayas`, including: WWR item without `": "` skipped; Himalayas item using `content:encoded` for description.)
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/collectors/test_tier0_rss.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement the three collectors.**
+- [x] **Step 3: Implement the three collectors.**
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit/collectors -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add tier 0 rss collectors" && git push origin HEAD
@@ -505,7 +505,7 @@ git add -A && git commit -m "feat: add tier 0 rss collectors" && git push origin
   - **Adzuna**: `AdzunaCollector(settings, countries: list[str], queries: list[str], client=None)`; `GET https://api.adzuna.com/v1/api/jobs/{country}/search/1` with params `app_id`, `app_key`, `results_per_page=50`, `what=<query>`; `parse_adzuna(payload: dict, country: str) -> list[RawOpening]`: `results[]` → `company.display_name`, `title`, `location.display_name`, `redirect_url`→url, `description`, `created`, `id`→external_id. `fetch` raises `CollectorError` if credentials are empty (recorded as source error, not a crash).
   - **HN "Who is Hiring"**: `HnWhoIsHiringCollector(settings, client=None)`; `fetch` finds the latest monthly thread via `GET https://hn.algolia.com/api/v1/search?tags=story,author_whoishiring&query=%22who%20is%20hiring%22` (API verified 2026-10-18; sort by `created_at_i` desc) then fetches `GET https://hn.algolia.com/api/v1/items/{story_id}` (full comment tree). `parse_hn_thread(item: dict, story_title: str) -> list[RawOpening]`: each top-level `children[]` comment is one posting; parse the first line split on `"|"` — `company = parts[0]`, `title = parts[1]`, `location = parts[2] if present`; **skip comments whose first line yields fewer than 2 parts**; `external_id = comment id`; `url = f"https://news.ycombinator.com/item?id={comment_id}"`; `description` = full comment HTML; `posted_at` = comment `created_at`; strip HTML tags for the first-line parse.
 
-- [ ] **Step 1: Write fixtures + failing tests**
+- [x] **Step 1: Write fixtures + failing tests**
 
 ```python
 def test_parse_adzuna_maps_results():
@@ -522,19 +522,19 @@ def test_parse_hn_thread_extracts_pipe_delimited_postings():
     assert jobs[0].location == "Remote" and jobs[0].url.endswith("item?id=4411")
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/collectors/test_adzuna_hn.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement both collectors.**
+- [x] **Step 3: Implement both collectors.**
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit/collectors -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add adzuna and hn who is hiring collectors" && git push origin HEAD
@@ -555,7 +555,7 @@ git add -A && git commit -m "feat: add adzuna and hn who is hiring collectors" &
   - **Lever**: `GET https://api.lever.co/v0/postings/{slug}` (URL pattern pinned by PRD §5.1); `parse_lever(payload: list[dict], company: str) -> list[RawOpening]`: `text`→title, `categories.location`→location, `hostedUrl`→url, `descriptionPlain`→description, `createdAt` (ms epoch)→posted_at, `id`→external_id.
   - **Workable**: `POST https://apply.workable.com/api/v3/accounts/{slug}/jobs` with JSON body `{"query": "", "location": [], "department": [], "worktype": [], "remote": []}` → `results[]`: `title`, `shortcode`→external_id, `country`/`city`→location, url = `f"https://apply.workable.com/{slug}/j/{shortcode}/"`; then per job `GET https://apply.workable.com/api/v3/accounts/{slug}/jobs/{shortcode}` for the description. `parse_workable(payload: dict, slug: str, company: str) -> list[RawOpening]` (list only; descriptions filled by `fetch` from detail responses). **Escape hatch:** if this endpoint shape proves wrong at acceptance, disable Workable in `sources.yml` and drop it from Phase 1 (collection failure → source dropped, Q10).
 
-- [ ] **Step 1: Write fixtures + failing tests**
+- [x] **Step 1: Write fixtures + failing tests**
 
 ```python
 def test_parse_greenhouse_uses_configured_company_name():
@@ -573,19 +573,19 @@ def test_parse_workable_builds_apply_urls():
     assert jobs[0].url == "https://apply.workable.com/hooli/j/9F8E7D6C5A/" and jobs[0].external_id == "9F8E7D6C5A"
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/collectors/test_tier1_ats.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement the three collectors.**
+- [x] **Step 3: Implement the three collectors.**
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit/collectors -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add tier 1 ats collectors" && git push origin HEAD
@@ -607,7 +607,7 @@ git add -A && git commit -m "feat: add tier 1 ats collectors" && git push origin
   - `load_gmail_credentials(settings: Settings) -> Credentials` — loads `settings.gmail_token_file`, refreshes if expired; raises `CollectorError` with instructions if missing.
   - `run_gmail_auth(settings: Settings) -> None` — `InstalledAppFlow.from_client_secrets_file(settings.gmail_credentials_file, scopes=["https://www.googleapis.com/auth/gmail.readonly"]).run_local_server(port=0)`, writes token JSON to `settings.gmail_token_file` (under gitignored `data/`). Exposed as `python -m lookout.cli gmail-auth` in Task 15.
 
-- [ ] **Step 1: Write fixture + failing tests**
+- [x] **Step 1: Write fixture + failing tests**
 
 Fixture `linkedin_alert.html`: fictional alert with 2 job cards (Globex/"Senior Python Engineer" id 4311001, Initech/"Backend Developer" id 4311002) containing `/comm/jobs/view/` links with tracking params, plus one promotional block with no job link.
 
@@ -623,19 +623,19 @@ def test_parse_linkedin_alert_ignores_non_job_emails():
     assert parse_linkedin_alert("Your weekly summary", "<html><body>No jobs</body></html>") == []
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/collectors/test_linkedin_email.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `linkedin_email.py`** (parser pure and tested; Gmail transport thin and untested — verified manually at acceptance).
+- [x] **Step 3: Implement `linkedin_email.py`** (parser pure and tested; Gmail transport thin and untested — verified manually at acceptance).
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit/collectors -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add linkedin email alerts collector" && git push origin HEAD
@@ -659,7 +659,7 @@ git add -A && git commit -m "feat: add linkedin email alerts collector" && git p
   - `kb_to_prompt_text(kb: KnowledgeBase) -> str` — deterministic serialization of the KB for the LLM prompt: every experience/project line tagged with its `id` (e.g. `[exp-acme]`), so the LLM output can cite ids for validation.
   - `templates/kb/` committed with a **fictional** persona (privacy rule); user copies it to `data/kb/`.
 
-- [ ] **Step 1: Write fixture KB + failing test**
+- [x] **Step 1: Write fixture KB + failing test**
 
 Fixture `tests/fixtures/kb/`: `identity.md` (Maria Silva, CPF `123.456.789-09`, `+55 11 98765-4321`, `Rua das Flores, 123 - São Paulo/SP`, `maria.silva@example.com`), `experiences/exp-acme.md`, `projects/proj-lookout.md`, skills `[Python, FastAPI, PostgreSQL]`.
 
@@ -679,19 +679,19 @@ def test_kb_to_prompt_text_tags_facts_with_ids():
     assert "[exp-acme]" in text and "[proj-lookout]" in text
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/test_kb.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `kb.py` + the `templates/kb/` starter.**
+- [x] **Step 3: Implement `kb.py` + the `templates/kb/` starter.**
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit/test_kb.py -v`
 Expected: 3 PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add knowledge base loader and starter template" && git push origin HEAD
@@ -714,7 +714,7 @@ git add -A && git commit -m "feat: add knowledge base loader and starter templat
   - `contains_pii(text: str, pii: PiiProfile) -> bool` — True if any profile literal or CPF/phone regex matches; used as a post-redaction assertion (Review Focus #2).
   - PRD pins name/CPF/phone/address (Q14, F6); email is redacted as an extra safeguard.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 PII = PiiProfile(full_name="Maria Silva", cpf="123.456.789-09",
@@ -738,19 +738,19 @@ def test_contains_pii():
     assert not contains_pii("[CPF] available on request", PII)
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/test_redaction.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `redaction.py`; move `PiiProfile` there and update `kb.py` to import it.**
+- [x] **Step 3: Implement `redaction.py`; move `PiiProfile` there and update `kb.py` to import it.**
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit -v`
 Expected: all PASS (including Task 11 tests unchanged).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add pii redaction layer" && git push origin HEAD
@@ -772,7 +772,7 @@ git add -A && git commit -m "feat: add pii redaction layer" && git push origin H
   - `build_tailor_prompt(*, opening: Opening, kb_text: str, language: str) -> tuple[str, str]` — system prompt pins the guardrail verbatim: *"Use ONLY facts present in the knowledge base below. Never invent employers, roles, dates, projects or skills. Every experience and project in your output must carry the exact kb_id from the knowledge base. Output JSON only."* + language-follows-posting instruction; user prompt = opening (company/title/description) + `kb_text`.
   - `validate_resume(resume: TailoredResume, kb: KnowledgeBase) -> list[str]` — violation per `kb_id` not present in the KB and per skill not in `kb.skills` (case-insensitive); empty list = valid (R1/F2 guardrail).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/unit/test_llm.py
@@ -808,19 +808,19 @@ def test_prompt_contains_guardrail_redacted_kb_and_posting(kb, opening):
     assert "[exp-acme]" in user and opening.title in user and opening.company in user
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/test_llm.py tests/unit/test_tailor_prompts.py tests/unit/test_tailor_validation.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement the modules** per the pinned signatures (fixtures: reuse `tests/fixtures/kb`; add `tests/fixtures/tailor/` resume JSONs).
+- [x] **Step 3: Implement the modules** per the pinned signatures (fixtures: reuse `tests/fixtures/kb`; add `tests/fixtures/tailor/` resume JSONs).
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add openrouter client and tailor prompt validation" && git push origin HEAD
@@ -842,7 +842,7 @@ git add -A && git commit -m "feat: add openrouter client and tailor prompt valid
   - `html_to_pdf(html: str, out_path: Path) -> Path` — WeasyPrint; creates parent dirs.
   - `class TailorError(Exception)`; `tailor_resume(session: Session, *, opening_id: uuid.UUID, kb_path: Path, out_dir: Path, llm: OpenRouterClient) -> Path` — orchestrates: load opening (raise `TailorError` if missing) → load KB → `kb_to_prompt_text` → `redact` → **assert `not contains_pii(...)` else raise `TailorError`** → `detect_language(opening.description)` → `build_tailor_prompt` → `llm.complete_json` → `TailoredResume.model_validate` → `validate_resume` (violations → raise `TailorError` listing them) → `render_resume_html` → `html_to_pdf` to `out_dir / f"{opening_id}.pdf"` → return path.
 
-- [ ] **Step 1: Write fixtures + failing tests**
+- [x] **Step 1: Write fixtures + failing tests**
 
 ```python
 # tests/unit/test_render.py
@@ -879,19 +879,19 @@ def test_detect_language():
 ```
 (`opening_fixture` inserts a fictional opening; `llm_response_invalid.json` cites `exp-ghost` and skill `Kubernetes`.)
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/test_render.py tests/integration/test_tailor_pipeline.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `render.py`, `pdf.py`, `pipeline.py` and the resume templates.**
+- [x] **Step 3: Implement `render.py`, `pdf.py`, `pipeline.py` and the resume templates.**
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `docker compose exec api pytest tests/unit tests/integration -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add resume tailor pipeline with pdf output" && git push origin HEAD
@@ -914,7 +914,7 @@ git add -A && git commit -m "feat: add resume tailor pipeline with pdf output" &
   - `worker.py`: `process_next_job(session, settings) -> bool`; `enqueue_collect_job(settings, source: str) -> None`; `main()` — `BackgroundScheduler` with: queue poll every `settings.worker_poll_seconds` (`max_instances=1`), `reap_stale` every 10 min, and one interval job per enabled source (`minutes=cfg["interval_minutes"]`) calling `enqueue_collect_job`. `JOB_HANDLERS: dict[str, Callable[[Session, Settings, dict], None]]` = `{"collect": handle_collect, "tailor": handle_tailor}`; `handle_collect` runs `collect_all`/`collect_source`; `handle_tailor` runs `tailor_resume` with `settings.kb_path`, `settings.artifacts_dir` and an `OpenRouterClient` from settings. Handler exceptions → `queue.fail`; success → `queue.complete`.
   - `cli.py` (`python -m lookout.cli`, argparse): `collect [--source NAME] [--enqueue]` (default: runs synchronously and prints `IngestStats` per source), `tailor OPENING_ID` (synchronous, prints PDF path), `gmail-auth`, `list-openings [--limit N]`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/unit/test_api.py
@@ -954,19 +954,19 @@ def test_process_next_job_marks_failure(session, settings, monkeypatch):
 ```
 (The API tests build the app with test settings and override `get_session` via `app.dependency_overrides`; add fixtures to `tests/conftest.py`. A `fake` collector is registered in the test's config dict — registry accepts injected collectors.)
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `docker compose exec api pytest tests/unit/test_api.py tests/unit/test_worker.py tests/unit/test_registry.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `registry.py`, the API endpoints, the full worker and the CLI; update README.**
+- [x] **Step 3: Implement `registry.py`, the API endpoints, the full worker and the CLI; update README.**
 
-- [ ] **Step 4: Run to verify it passes + full suite green**
+- [x] **Step 4: Run to verify it passes + full suite green**
 
 Run: `docker compose up -d --build && docker compose exec api pytest -v && docker compose exec api ruff check .`
 Expected: all PASS, ruff clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "feat: add api endpoints, cli and worker scheduling" && git push origin HEAD
@@ -985,17 +985,17 @@ This task runs the MVP end-to-end against real services. It requires an `OPENROU
 
 `cp .env.example .env` and fill `OPENROUTER_API_KEY`; `cp -r templates/kb data/kb` (fictional persona or the user's real KB — never committed).
 
-- [ ] **Step 2: Boot the stack**
+- [x] **Step 2: Boot the stack**
 
 Run: `docker compose up -d --build && docker compose ps`
 Expected: `postgres` and `api` healthy, `worker` running; `docker compose exec api alembic current` shows `0002` (or later).
 
-- [ ] **Step 3: Collect real openings**
+- [x] **Step 3: Collect real openings**
 
 Run: `docker compose exec api python -m lookout.cli collect --source remoteok`
 Expected: output stats with `inserted > 0`, no errors. Repeat the same command: `duplicates > 0` and `inserted == 0` (F4 dedup works on re-run).
 
-- [ ] **Step 4: Collect everything enabled**
+- [x] **Step 4: Collect everything enabled**
 
 Run: `docker compose exec api python -m lookout.cli collect`
 Expected: per-source stats for all enabled sources; sources without credentials/config (adzuna, greenhouse/lever with empty company lists, linkedin_email, workable) report an error or zero results **without aborting the run**.
@@ -1005,17 +1005,17 @@ Expected: per-source stats for all enabled sources; sources without credentials/
 Run: `docker compose exec api python -m lookout.cli list-openings` then `docker compose exec api python -m lookout.cli tailor <OPENING_ID>`
 Expected: a PDF at `data/artifacts/<OPENING_ID>.pdf`; open it and confirm: correct language (follows the posting), real selectable text, content consistent with `data/kb` (no invented facts).
 
-- [ ] **Step 6: Verify the queue path (API → worker)**
+- [x] **Step 6: Verify the queue path (API → worker)**
 
 Run: `curl -X POST localhost:8000/collect -H 'Content-Type: application/json' -d '{"source": "remoteok"}'` and watch `docker compose logs -f worker`
 Expected: the worker claims the `collect` job and completes it (`status=done` visible in logs / DB).
 
-- [ ] **Step 7: (Optional) Gmail OAuth bootstrap + LinkedIn alerts**
+- [x] **Step 7: (Optional) Gmail OAuth bootstrap + LinkedIn alerts** — skipped because Gmail credentials were unavailable.
 
 Run: `docker compose exec api python -m lookout.cli gmail-auth` (needs `data/gmail_credentials.json` from Google Cloud Console with the Gmail API enabled) then enable `linkedin_email` in `config/sources.yml` and `collect --source linkedin_email`
 Expected: LinkedIn alert emails under the configured label become openings with canonical `linkedin.com/jobs/view/<id>` URLs.
 
-- [ ] **Step 8: Full verification + record results**
+- [x] **Step 8: Full verification + record results**
 
 Run: `docker compose exec api pytest -v && docker compose exec api ruff check . && docker compose exec api ruff format --check .`
 Expected: all green. Write the commands + observed outputs into `docs/runbooks/phase-1-acceptance.md`.
