@@ -4,14 +4,7 @@ from pathlib import Path
 import frontmatter
 import yaml
 
-
-@dataclass(frozen=True)
-class PiiProfile:
-    full_name: str
-    cpf: str
-    phone: str
-    address: str
-    email: str
+from lookout.redaction import PiiProfile
 
 
 @dataclass
