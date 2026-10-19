@@ -1,0 +1,24 @@
+[
+  {
+    "id": "lever-401",
+    "text": "Backend Developer",
+    "categories": {"location": "São Paulo, Brazil"},
+    "hostedUrl": "https://jobs.lever.co/initech/lever-401",
+    "descriptionPlain": "Maintain fictional services.",
+    "createdAt": 1792324800000
+  },
+  {
+    "id": "lever-402",
+    "text": "Python Engineer",
+    "categories": {"location": "Remote"},
+    "hostedUrl": "https://jobs.lever.co/initech/lever-402",
+    "descriptionPlain": "Build fictional systems.",
+    "createdAt": 1792229400000
+  },
+  {
+    "id": "lever-bad",
+    "text": "Data Engineer",
+    "categories": {"location": "Remote"},
+    "descriptionPlain": "Missing required URL."
+  }
+]

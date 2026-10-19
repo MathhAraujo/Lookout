@@ -1,0 +1,20 @@
+{
+  "results": [
+    {
+      "title": "Senior Python Engineer",
+      "shortcode": "9F8E7D6C5A",
+      "country": "United States",
+      "city": "New York"
+    },
+    {
+      "title": "Backend Developer",
+      "shortcode": "1A2B3C4D5E",
+      "country": "Brazil",
+      "city": "São Paulo"
+    },
+    {
+      "shortcode": "BAD",
+      "country": "Remote"
+    }
+  ]
+}

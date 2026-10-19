@@ -1,0 +1,26 @@
+{
+  "jobs": [
+    {
+      "id": 301,
+      "title": "Senior Python Engineer",
+      "location": {"name": "Remote"},
+      "absolute_url": "https://job-boards.greenhouse.io/globex/jobs/301",
+      "content": "<p>Build APIs for fictional products.</p>",
+      "updated_at": "2026-10-18T12:00:00Z"
+    },
+    {
+      "id": 302,
+      "title": "Backend Developer",
+      "location": {"name": "Worldwide"},
+      "absolute_url": "https://job-boards.greenhouse.io/globex/jobs/302",
+      "content": "Maintain fictional services.",
+      "updated_at": "2026-10-17T09:30:00Z"
+    },
+    {
+      "id": 303,
+      "title": "Data Engineer",
+      "location": {"name": "Remote"},
+      "content": "Missing required URL."
+    }
+  ]
+}
