@@ -1,0 +1,29 @@
+{
+  "jobs": [
+    {
+      "id": "jobicy-345",
+      "companyName": "Globex",
+      "jobTitle": "Senior Python Engineer",
+      "jobGeo": "Worldwide",
+      "url": "https://jobicy.com/jobs/345",
+      "jobDescription": "Build APIs for fictional products.",
+      "pubDate": "2026-10-18T12:00:00Z"
+    },
+    {
+      "id": "jobicy-678",
+      "companyName": "Initech",
+      "jobTitle": "Backend Developer",
+      "jobGeo": "Remote",
+      "url": "https://jobicy.com/jobs/678",
+      "jobDescription": "Maintain fictional services.",
+      "pubDate": "2026-10-17T09:30:00+00:00"
+    },
+    {
+      "id": "jobicy-901",
+      "companyName": "Umbrella Labs",
+      "jobTitle": "Data Engineer",
+      "jobGeo": "Remote",
+      "jobDescription": "Missing required URL."
+    }
+  ]
+}

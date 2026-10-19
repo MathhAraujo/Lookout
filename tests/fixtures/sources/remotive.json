@@ -1,0 +1,29 @@
+{
+  "jobs": [
+    {
+      "id": 234,
+      "company_name": "Globex",
+      "title": "Senior Python Engineer",
+      "candidate_required_location": "Worldwide",
+      "url": "https://remotive.com/remote-jobs/234",
+      "description": "Build APIs for fictional products.",
+      "publication_date": "2026-10-18T12:00:00Z"
+    },
+    {
+      "id": 567,
+      "company_name": "Initech",
+      "title": "Backend Developer",
+      "candidate_required_location": "Remote",
+      "url": "https://remotive.com/remote-jobs/567",
+      "description": "Maintain fictional services.",
+      "publication_date": "2026-10-17T09:30:00+00:00"
+    },
+    {
+      "id": 890,
+      "company_name": "Umbrella Labs",
+      "title": "Data Engineer",
+      "candidate_required_location": "Remote",
+      "description": "Missing required URL."
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "slug": "globex-senior-python-engineer",
+      "company_name": "Globex",
+      "title": "Senior Python Engineer",
+      "location": "Worldwide",
+      "url": "https://www.arbeitnow.com/view/globex-senior-python-engineer",
+      "description": "Build APIs for fictional products.",
+      "created_at": 1792324800
+    },
+    {
+      "slug": "initech-backend-developer",
+      "company_name": "Initech",
+      "title": "Backend Developer",
+      "location": "Remote",
+      "url": "https://www.arbeitnow.com/view/initech-backend-developer",
+      "description": "Maintain fictional services.",
+      "created_at": 1792229400
+    },
+    {
+      "slug": "umbrella-data-engineer",
+      "company_name": "Umbrella Labs",
+      "title": "Data Engineer",
+      "location": "Remote",
+      "description": "Missing required URL."
+    }
+  ]
+}

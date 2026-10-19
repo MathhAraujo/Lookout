@@ -1,0 +1,28 @@
+[
+  {"legal": "Public job board data"},
+  {
+    "id": 123,
+    "company": "Globex",
+    "position": "Senior Python Engineer",
+    "location": "Anywhere",
+    "url": "https://remoteok.com/remote-jobs/123",
+    "description": "<p>Build APIs for fictional products.</p>",
+    "date": "2026-10-18T12:00:00+00:00"
+  },
+  {
+    "id": 456,
+    "company": "Initech",
+    "position": "Backend Developer",
+    "location": "Remote",
+    "url": "https://remoteok.com/remote-jobs/456",
+    "description": "Maintain fictional services.",
+    "date": "2026-10-17T09:30:00Z"
+  },
+  {
+    "id": 789,
+    "company": "Umbrella Labs",
+    "position": "Data Engineer",
+    "location": "Remote",
+    "description": "Missing required URL."
+  }
+]
