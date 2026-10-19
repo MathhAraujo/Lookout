@@ -1,0 +1,17 @@
+{
+  "language": "pt-br",
+  "summary": "Engenheira de software com experiência em serviços de API.",
+  "experiences": [
+    {
+      "kb_id": "exp-acme",
+      "highlights": ["Desenvolveu serviços de API resilientes"]
+    }
+  ],
+  "projects": [
+    {
+      "kb_id": "proj-lookout",
+      "highlights": ["Criou um protótipo local de busca de vagas"]
+    }
+  ],
+  "skills": ["Python", "FastAPI"]
+}

@@ -1,0 +1,23 @@
+from pathlib import Path
+from types import SimpleNamespace
+
+from lookout.kb import kb_to_prompt_text, load_knowledge_base
+from lookout.tailor.prompts import build_tailor_prompt
+
+
+def test_prompt_contains_guardrail_redacted_kb_and_posting():
+    kb = load_knowledge_base(Path("tests/fixtures/kb"))
+    opening = SimpleNamespace(
+        company="Globex",
+        title="Senior Python Engineer",
+        description="Build fictional APIs with Python.",
+    )
+
+    system, user = build_tailor_prompt(
+        opening=opening,
+        kb_text=kb_to_prompt_text(kb),
+        language="en",
+    )
+
+    assert "Never invent" in system and "English" in system
+    assert "[exp-acme]" in user and opening.title in user and opening.company in user

@@ -1,0 +1,12 @@
+{
+  "language": "en",
+  "summary": "Invented experience.",
+  "experiences": [
+    {
+      "kb_id": "exp-ghost",
+      "highlights": ["Invented a global platform"]
+    }
+  ],
+  "projects": [],
+  "skills": ["Kubernetes"]
+}

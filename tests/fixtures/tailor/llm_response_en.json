@@ -1,0 +1,17 @@
+{
+  "language": "en",
+  "summary": "Backend engineer experienced in reliable API services.",
+  "experiences": [
+    {
+      "kb_id": "exp-acme",
+      "highlights": ["Built resilient API services"]
+    }
+  ],
+  "projects": [
+    {
+      "kb_id": "proj-lookout",
+      "highlights": ["Created a local-first job discovery prototype"]
+    }
+  ],
+  "skills": ["python", "FastAPI"]
+}
