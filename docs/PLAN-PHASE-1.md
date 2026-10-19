@@ -177,7 +177,7 @@ Expected: 2 PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add openings state database with alembic migrations"
+git add -A && git commit -m "feat: add openings state database with alembic migrations" && git push origin HEAD
 ```
 
 ---
@@ -249,7 +249,7 @@ Expected: all PASS (Task 2 + Task 3).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add db-backed job queue"
+git add -A && git commit -m "feat: add db-backed job queue" && git push origin HEAD
 ```
 
 ---
@@ -313,7 +313,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add normalization and fuzzy dedup"
+git add -A && git commit -m "feat: add normalization and fuzzy dedup" && git push origin HEAD
 ```
 
 ---
@@ -396,7 +396,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add collector framework and ingestion pipeline"
+git add -A && git commit -m "feat: add collector framework and ingestion pipeline" && git push origin HEAD
 ```
 
 ---
@@ -445,7 +445,7 @@ Expected: 4 PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add tier 0 json api collectors"
+git add -A && git commit -m "feat: add tier 0 json api collectors" && git push origin HEAD
 ```
 
 ---
@@ -488,7 +488,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add tier 0 rss collectors"
+git add -A && git commit -m "feat: add tier 0 rss collectors" && git push origin HEAD
 ```
 
 ---
@@ -537,7 +537,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add adzuna and hn who is hiring collectors"
+git add -A && git commit -m "feat: add adzuna and hn who is hiring collectors" && git push origin HEAD
 ```
 
 ---
@@ -588,7 +588,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add tier 1 ats collectors"
+git add -A && git commit -m "feat: add tier 1 ats collectors" && git push origin HEAD
 ```
 
 ---
@@ -638,7 +638,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add linkedin email alerts collector"
+git add -A && git commit -m "feat: add linkedin email alerts collector" && git push origin HEAD
 ```
 
 ---
@@ -694,7 +694,7 @@ Expected: 3 PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add knowledge base loader and starter template"
+git add -A && git commit -m "feat: add knowledge base loader and starter template" && git push origin HEAD
 ```
 
 ---
@@ -753,7 +753,7 @@ Expected: all PASS (including Task 11 tests unchanged).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add pii redaction layer"
+git add -A && git commit -m "feat: add pii redaction layer" && git push origin HEAD
 ```
 
 ---
@@ -823,7 +823,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add openrouter client and tailor prompt validation"
+git add -A && git commit -m "feat: add openrouter client and tailor prompt validation" && git push origin HEAD
 ```
 
 ---
@@ -894,7 +894,7 @@ Expected: all PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add resume tailor pipeline with pdf output"
+git add -A && git commit -m "feat: add resume tailor pipeline with pdf output" && git push origin HEAD
 ```
 
 ---
@@ -969,7 +969,7 @@ Expected: all PASS, ruff clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat: add api endpoints, cli and worker scheduling"
+git add -A && git commit -m "feat: add api endpoints, cli and worker scheduling" && git push origin HEAD
 ```
 
 ---
@@ -1023,7 +1023,7 @@ Expected: all green. Write the commands + observed outputs into `docs/runbooks/p
 - [ ] **Step 9: Commit and push** (major point per `.opencode/rules/git-workflow.md`)
 
 ```bash
-git add -A && git commit -m "docs: record phase 1 acceptance results" && git push origin main
+git add -A && git commit -m "docs: record phase 1 acceptance results" && git push origin HEAD
 ```
 
 ---
