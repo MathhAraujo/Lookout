@@ -34,9 +34,7 @@ def get_opening(session: Session, opening_id: uuid.UUID) -> Opening | None:
     return session.get(Opening, opening_id)
 
 
-def list_openings(
-    session: Session, *, limit: int = 100, offset: int = 0
-) -> list[Opening]:
+def list_openings(session: Session, *, limit: int = 100, offset: int = 0) -> list[Opening]:
     statement = select(Opening).order_by(Opening.collected_at.desc(), Opening.id)
     return list(session.exec(statement.offset(offset).limit(limit)).all())
 

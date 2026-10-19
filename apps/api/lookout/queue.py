@@ -69,9 +69,7 @@ def fail(session: Session, job: Job, error: str) -> None:
     session.flush()
 
 
-def reap_stale(
-    session: Session, *, stale_after: timedelta = timedelta(minutes=30)
-) -> int:
+def reap_stale(session: Session, *, stale_after: timedelta = timedelta(minutes=30)) -> int:
     now = utcnow()
     stale_before = now - stale_after
     statement = (

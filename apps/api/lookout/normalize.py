@@ -20,9 +20,7 @@ _REMOTE_TITLE_TOKENS = {"remote", "hybrid", "onsite"}
 def normalize_text(value: str) -> str:
     decomposed = unicodedata.normalize("NFKD", value)
     characters = (
-        character.lower()
-        if character.isalnum() or character.isspace()
-        else " "
+        character.lower() if character.isalnum() or character.isspace() else " "
         for character in decomposed
         if not unicodedata.combining(character)
     )

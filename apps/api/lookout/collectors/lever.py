@@ -42,7 +42,9 @@ def parse_lever(payload: list[dict], company: str) -> list[RawOpening]:
                 external_id=str(external_id) if external_id is not None else None,
                 company=company.strip(),
                 title=title.strip(),
-                location=location.strip() if isinstance(location, str) and location.strip() else None,
+                location=location.strip()
+                if isinstance(location, str) and location.strip()
+                else None,
                 url=url.strip(),
                 description=description if isinstance(description, str) else "",
                 posted_at=_parse_timestamp(item.get("createdAt")),

@@ -43,9 +43,7 @@ def _ensure_test_database(test_url: URL) -> None:
                 {"database_name": test_url.database},
             ).scalar_one_or_none()
             if exists is None:
-                database_name = admin_engine.dialect.identifier_preparer.quote(
-                    test_url.database
-                )
+                database_name = admin_engine.dialect.identifier_preparer.quote(test_url.database)
                 connection.exec_driver_sql(f"CREATE DATABASE {database_name}")
     finally:
         admin_engine.dispose()

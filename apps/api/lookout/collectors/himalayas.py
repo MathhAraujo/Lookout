@@ -56,9 +56,7 @@ def parse_himalayas(payload: str) -> list[RawOpening]:
                 company=company.strip(),
                 title=title.strip(),
                 location=(
-                    location.strip()
-                    if isinstance(location, str) and location.strip()
-                    else None
+                    location.strip() if isinstance(location, str) and location.strip() else None
                 ),
                 url=url.strip(),
                 description=_description(entry),

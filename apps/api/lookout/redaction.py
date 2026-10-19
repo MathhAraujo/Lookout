@@ -40,6 +40,9 @@ def redact(text: str, pii: PiiProfile) -> str:
 
 
 def contains_pii(text: str, pii: PiiProfile) -> bool:
-    if any(re.search(re.escape(literal), text, flags=re.IGNORECASE) for literal, _ in _profile_literals(pii)):
+    if any(
+        re.search(re.escape(literal), text, flags=re.IGNORECASE)
+        for literal, _ in _profile_literals(pii)
+    ):
         return True
     return bool(_CPF_PATTERN.search(text) or _PHONE_PATTERN.search(text))

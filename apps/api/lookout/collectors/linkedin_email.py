@@ -16,9 +16,7 @@ from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
 
 _GMAIL_READONLY_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
-_JOB_URL_PATTERN = re.compile(
-    r"https://www\.linkedin\.com/(?:comm/)?jobs/view/(\d+)"
-)
+_JOB_URL_PATTERN = re.compile(r"https://www\.linkedin\.com/(?:comm/)?jobs/view/(\d+)")
 _VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta"}
 
 
@@ -70,10 +68,7 @@ def _descendants(element: _Element):
 
 
 def _text(element: _Element) -> str:
-    parts = [
-        child if isinstance(child, str) else _text(child)
-        for child in element.children
-    ]
+    parts = [child if isinstance(child, str) else _text(child) for child in element.children]
     return " ".join(" ".join(parts).split())
 
 
@@ -84,10 +79,12 @@ def _has_class(element: _Element, fragment: str) -> bool:
 def _card_container(anchor: _Element) -> _Element | None:
     element = anchor.parent
     while element is not None and element.tag != "root":
-        if (
-            (_has_class(element, "job") and _has_class(element, "card"))
-            or element.tag in {"article", "li", "tr", "td"}
-        ):
+        if (_has_class(element, "job") and _has_class(element, "card")) or element.tag in {
+            "article",
+            "li",
+            "tr",
+            "td",
+        }:
             return element
         element = element.parent
     return None
@@ -181,9 +178,7 @@ def load_gmail_credentials(settings: Settings) -> Credentials:
 
 def run_gmail_auth(settings: Settings) -> None:
     if not settings.gmail_credentials_file.is_file():
-        raise CollectorError(
-            f"Gmail client secrets not found at {settings.gmail_credentials_file}"
-        )
+        raise CollectorError(f"Gmail client secrets not found at {settings.gmail_credentials_file}")
 
     flow = InstalledAppFlow.from_client_secrets_file(
         str(settings.gmail_credentials_file), scopes=[_GMAIL_READONLY_SCOPE]
@@ -228,10 +223,7 @@ class LinkedInEmailCollector:
     def fetch(self) -> list[RawOpening]:
         credentials = load_gmail_credentials(self.settings)
         service = build("gmail", "v1", credentials=credentials)
-        query = (
-            f"label:{self.settings.gmail_label} "
-            "from:jobs-noreply@linkedin.com newer_than:7d"
-        )
+        query = f"label:{self.settings.gmail_label} from:jobs-noreply@linkedin.com newer_than:7d"
         response = service.users().messages().list(userId="me", q=query).execute()
         messages = response.get("messages", [])
 
@@ -241,10 +233,7 @@ class LinkedInEmailCollector:
             if not message_id:
                 continue
             message_data = (
-                service.users()
-                .messages()
-                .get(userId="me", id=message_id, format="full")
-                .execute()
+                service.users().messages().get(userId="me", id=message_id, format="full").execute()
             )
             payload = message_data.get("payload", {})
             headers = payload.get("headers", [])

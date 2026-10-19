@@ -34,7 +34,9 @@ def handle_collect(session: Session, settings: Settings, payload: dict) -> None:
 
 
 def _raise_collection_errors(results: dict[str, IngestStats]) -> None:
-    errors = [f"{name}: {', '.join(stats.errors)}" for name, stats in results.items() if stats.errors]
+    errors = [
+        f"{name}: {', '.join(stats.errors)}" for name, stats in results.items() if stats.errors
+    ]
     if errors:
         raise RuntimeError("; ".join(errors))
 

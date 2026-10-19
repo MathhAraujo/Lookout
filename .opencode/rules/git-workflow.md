@@ -12,9 +12,20 @@ Whenever the project reaches a **major point**, update the GitHub repository.
 ## Required workflow
 
 1. Check `git status` and review the changes with `git diff`.
-2. Make sure the project builds and tests pass **before** committing.
-3. Create one commit per milestone using Conventional Commits (see below).
-4. Run `git push` of the current branch to the GitHub remote.
+2. Before committing, make sure the project builds and the **full test suite**,
+   lint, and formatter check pass. For Python, run `pytest`, `ruff check .`, and
+   `ruff format --check apps tests` from the repository root; do not limit
+   verification to tests for the current task. The formatter gate covers
+   application and test code; do not reformat generated Alembic files or docs.
+3. If formatting fails, run `ruff format apps tests`; fix all test and lint
+   failures, then rerun the checks until they pass.
+4. Create one commit per milestone using Conventional Commits (see below).
+5. Before every push, confirm the full test suite, lint, and formatter check
+   have passed since the latest code change. Reuse successful results for the
+   unchanged tree; do not rerun checks solely because a push is next. If code
+   changes after verification, rerun the checks and fix any failures before
+   pushing.
+6. Run `git push` of the current branch to the GitHub remote.
 
 ## Commit messages — Conventional Commits (always in English)
 

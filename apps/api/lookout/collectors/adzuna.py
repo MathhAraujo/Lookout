@@ -37,8 +37,7 @@ def parse_adzuna(payload: dict, country: str) -> list[RawOpening]:
             continue
         company_name = company.get("display_name")
         if not all(
-            isinstance(value, str) and value.strip()
-            for value in (company_name, title, url)
+            isinstance(value, str) and value.strip() for value in (company_name, title, url)
         ):
             continue
 

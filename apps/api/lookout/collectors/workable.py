@@ -32,9 +32,7 @@ def parse_workable(payload: dict, slug: str, company: str) -> list[RawOpening]:
         city = item.get("city")
         country = item.get("country")
         location_parts = [
-            part.strip()
-            for part in (city, country)
-            if isinstance(part, str) and part.strip()
+            part.strip() for part in (city, country) if isinstance(part, str) and part.strip()
         ]
         jobs.append(
             RawOpening(
@@ -87,7 +85,9 @@ class WorkableCollector:
     def fetch(self) -> list[RawOpening]:
         jobs = []
         for slug, company in self.companies.items():
-            response = self.client.post(_JOBS_URL.format(slug=quote(slug, safe="")), json=_JOBS_QUERY)
+            response = self.client.post(
+                _JOBS_URL.format(slug=quote(slug, safe="")), json=_JOBS_QUERY
+            )
             response.raise_for_status()
             openings = parse_workable(response.json(), slug, company)
 

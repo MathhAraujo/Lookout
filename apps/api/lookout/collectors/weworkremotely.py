@@ -45,9 +45,7 @@ def parse_weworkremotely(payload: str) -> list[RawOpening]:
                 company=company.strip(),
                 title=role.strip(),
                 location=(
-                    location.strip()
-                    if isinstance(location, str) and location.strip()
-                    else None
+                    location.strip() if isinstance(location, str) and location.strip() else None
                 ),
                 url=url.strip(),
                 description=description if isinstance(description, str) else "",
