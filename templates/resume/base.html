@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="{{ resume.language }}">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ identity.full_name }} — Resume</title>
+    <style>{{ css | safe }}</style>
+  </head>
+  <body>
+    <main class="resume">
+      <header class="resume-header">
+        <h1>{{ identity.full_name }}</h1>
+        <p class="contact">
+          {{ identity.email }} · {{ identity.phone }} · {{ identity.address }}
+        </p>
+      </header>
+
+      <section>
+        <h2>{{ headings.summary }}</h2>
+        <p>{{ resume.summary }}</p>
+      </section>
+
+      <section>
+        <h2>{{ headings.experience }}</h2>
+        {% for experience in experiences %}
+        <article>
+          <h3>{{ experience.role }} — {{ experience.company }}</h3>
+          <p class="dates">{{ experience.start }} – {{ experience.end or "Present" }}</p>
+          <p>{{ experience.summary }}</p>
+          {% if experience.highlights %}
+          <ul>
+            {% for highlight in experience.highlights %}
+            <li>{{ highlight }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if experience.tech %}
+          <p class="technology">{{ experience.tech | join(", ") }}</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </section>
+
+      <section>
+        <h2>{{ headings.projects }}</h2>
+        {% for project in projects %}
+        <article>
+          <h3>{{ project.name }}</h3>
+          <p>{{ project.summary }}</p>
+          {% if project.highlights %}
+          <ul>
+            {% for highlight in project.highlights %}
+            <li>{{ highlight }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if project.tech %}
+          <p class="technology">{{ project.tech | join(", ") }}</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </section>
+
+      <section>
+        <h2>{{ headings.skills }}</h2>
+        <p>{{ resume.skills | join(", ") }}</p>
+      </section>
+
+      <section>
+        <h2>{{ headings.education }}</h2>
+        <ul>
+          {% for item in education %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

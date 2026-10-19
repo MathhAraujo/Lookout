@@ -1,10 +1,14 @@
 import os
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
+from lookout.collectors.base import RawOpening
 from lookout.config import Settings, get_settings
 from lookout.db import build_engine
+from lookout.kb import KnowledgeBase, load_knowledge_base
 from lookout.models import Opening
+from lookout.openings import insert_opening
 from sqlalchemy import create_engine as create_sqlalchemy_engine
 from sqlalchemy import text
 from sqlalchemy.engine import URL, Engine, make_url
@@ -64,7 +68,30 @@ def session(engine: Engine) -> Iterator[Session]:
     metadata.drop_all(engine)
     metadata.create_all(engine)
 
-    with Session(engine) as session:
-        yield session
+    with Session(engine) as database_session:
+        yield database_session
 
     metadata.drop_all(engine)
+
+
+@pytest.fixture
+def kb() -> KnowledgeBase:
+    return load_knowledge_base(Path("tests/fixtures/kb"))
+
+
+@pytest.fixture
+def opening_fixture(session: Session) -> Opening:
+    return insert_opening(
+        session,
+        RawOpening(
+            source="fixture",
+            external_id="fixture-opening-1",
+            company="Globex",
+            title="Senior Python Engineer",
+            location="Remote",
+            url="https://example.com/jobs/fixture-opening-1",
+            description="We are looking for a Python developer with experience.",
+            posted_at=None,
+            raw={},
+        ),
+    )

@@ -1,0 +1,54 @@
+@page {
+  size: A4;
+  margin: 18mm;
+}
+
+body {
+  color: #202124;
+  font-family: Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.4;
+}
+
+.resume {
+  max-width: 100%;
+}
+
+.resume-header {
+  border-bottom: 1px solid #777;
+  margin-bottom: 1.2em;
+  padding-bottom: 0.8em;
+}
+
+h1 {
+  font-size: 22pt;
+  margin: 0 0 0.2em;
+}
+
+h2 {
+  border-bottom: 1px solid #aaa;
+  font-size: 13pt;
+  margin: 1.1em 0 0.5em;
+  padding-bottom: 0.2em;
+}
+
+h3 {
+  font-size: 11pt;
+  margin: 0.7em 0 0.15em;
+}
+
+p {
+  margin: 0.25em 0 0.5em;
+}
+
+ul {
+  margin: 0.3em 0 0.6em;
+  padding-left: 1.3em;
+}
+
+.contact,
+.dates,
+.technology {
+  color: #444;
+  font-size: 9pt;
+}
