@@ -19,3 +19,13 @@ Lookout is an AI agent that automatically applies to job openings on behalf of t
 - Keep changes consistent with existing code style and patterns.
 - Do not edit auto-generated files.
 - Stack, tooling and build/test commands: see `.opencode/rules/stack.md`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues on `MathhAraujo/Lookout` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
