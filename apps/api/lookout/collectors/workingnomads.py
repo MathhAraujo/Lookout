@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from lookout.collectors.base import RawOpening
+from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
 
 _URL = "https://www.workingnomads.com/api/exposed_jobs/"
@@ -54,7 +54,7 @@ def _parse_job(item: Any) -> RawOpening | None:
 
 def parse_workingnomads(payload: Any) -> list[RawOpening]:
     if not isinstance(payload, list):
-        return []
+        raise CollectorError("Unexpected top-level payload from Working Nomads")
 
     jobs = []
     for item in payload:

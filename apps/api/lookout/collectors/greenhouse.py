@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from lookout.collectors.base import RawOpening
+from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
 
 _URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
@@ -20,8 +20,10 @@ def _parse_datetime(value: Any) -> datetime | None:
 
 
 def parse_greenhouse(payload: dict, company: str) -> list[RawOpening]:
-    jobs_payload = payload.get("jobs")
-    if not isinstance(jobs_payload, list) or not company.strip():
+    jobs_payload = payload.get("jobs") if isinstance(payload, dict) else None
+    if not isinstance(jobs_payload, list):
+        raise CollectorError("Unexpected top-level payload from Greenhouse")
+    if not company.strip():
         return []
 
     jobs = []

@@ -14,3 +14,9 @@ def test_is_duplicate_keeps_distinct_roles_at_same_company():
 
     assert not is_duplicate(dedup_key("Acme", "Senior Backend Engineer"), existing)
     assert not is_duplicate(dedup_key("Acme", "Product Manager"), existing)
+
+
+def test_is_duplicate_keeps_grade_suffixed_roles_at_same_company():
+    existing = [dedup_key("Acme", "Backend Engineer")]
+
+    assert not is_duplicate(dedup_key("Acme", "Backend Engineer II"), existing)

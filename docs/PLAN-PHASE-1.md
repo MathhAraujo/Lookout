@@ -267,7 +267,7 @@ git add -A && git commit -m "feat: add db-backed job queue" && git push origin H
   - `normalize_company(name: str) -> str` — `normalize_text` then drop trailing legal-suffix tokens: `{inc, incorporated, llc, ltd, ltda, corp, corporation, company, co, gmbh, sarl, sa}`.
   - `normalize_title(title: str) -> str` — `normalize_text` then drop tokens `{remote, hybrid, onsite}`.
   - `dedup_key(company: str, title: str) -> str` — `f"{normalize_company(company)}|{normalize_title(title)}"`.
-  - `is_duplicate(candidate_key: str, existing_keys: Sequence[str], *, company_threshold: float = 90.0, title_threshold: float = 90.0) -> bool` — splits keys on `"|"`; duplicate when any existing key has `rapidfuzz.fuzz.token_set_ratio` on the **company** part ≥ `company_threshold` **and** `fuzz.token_sort_ratio` on the **title** part ≥ `title_threshold`. (token_set for company tolerates "Mercado Livre" ⊂ "Mercado Livre Brasil"; token_sort for title prevents "Backend Engineer" ⊂ "Senior Backend Engineer" from false-matching — Review Focus #1.)
+  - `is_duplicate(candidate_key: str, existing_keys: Sequence[str], *, company_threshold: float = 90.0, title_threshold: float = 90.0) -> bool` — splits keys on `"|"`; duplicate when any existing key has `rapidfuzz.fuzz.token_set_ratio` on the **company** part ≥ `company_threshold` **and** `fuzz.token_sort_ratio` on the **title** part ≥ `title_threshold`. Mismatched role-level markers (seniority/ordinal tokens such as `senior` or `II`) always prevent a duplicate match. (token_set for company tolerates "Mercado Livre" ⊂ "Mercado Livre Brasil"; token_sort for title prevents "Backend Engineer" ⊂ "Senior Backend Engineer" from false-matching — Review Focus #1.)
 
 - [x] **Step 1: Write the failing tests**
 
@@ -414,7 +414,7 @@ git add -A && git commit -m "feat: add collector framework and ingestion pipelin
   - **Remotive**: `GET https://remotive.com/api/remote-jobs`; `jobs[]`: `company_name`, `title`, `candidate_required_location`→location, `url`, `description`, `publication_date`, `id`.
   - **Arbeitnow**: `GET https://www.arbeitnow.com/api/job-board-api`; `data[]`: `company_name`, `title`, `location`, `url`, `description`, `created_at` (unix), `slug`→external_id.
   - **Jobicy**: `GET https://jobicy.com/api/v2/remote-jobs`; `jobs[]`: `companyName`, `jobTitle`→title, `jobGeo`→location, `url`, `jobDescription`→description, `pubDate`, `id`.
-  - All parsers: malformed entries are skipped (never raise); `source` set to the collector `name`.
+  - All parsers: malformed individual entries are skipped; unexpected top-level payload shapes raise `CollectorError` so the source failure is recorded; `source` is set to the collector `name`.
 
 - [x] **Step 1: Write fixtures + failing tests**
 
@@ -712,6 +712,7 @@ git add -A && git commit -m "feat: add knowledge base loader and starter templat
   - `@dataclass(frozen=True) PiiProfile`: `full_name`, `cpf`, `phone`, `address`, `email` (all `str`).
   - `redact(text: str, pii: PiiProfile) -> str` — replaces, case-insensitively, every non-empty profile literal with its placeholder (`[CANDIDATE_NAME]`, `[CPF]`, `[PHONE]`, `[ADDRESS]`, `[EMAIL]`); then applies regexes anywhere in the text: CPF `\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b`, BR phone `(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}-?\d{4}`. Over-redaction of digit runs is acceptable (privacy-favored).
   - `contains_pii(text: str, pii: PiiProfile) -> bool` — True if any profile literal or CPF/phone regex matches; used as a post-redaction assertion (Review Focus #2).
+  - International `+`-prefixed phone numbers are also redacted and checked by `contains_pii`.
   - PRD pins name/CPF/phone/address (Q14, F6); email is redacted as an extra safeguard.
 
 - [x] **Step 1: Write the failing tests**
@@ -770,7 +771,7 @@ git add -A && git commit -m "feat: add pii redaction layer" && git push origin H
   - `class LLMError(Exception)`; `class OpenRouterClient`: `__init__(self, *, api_key: str, model: str, base_url: str = "https://openrouter.ai/api/v1", client: httpx.Client | None = None)`; `complete_json(self, *, system: str, user: str) -> dict` — `POST {base_url}/chat/completions` with `Authorization: Bearer <key>`, body `{"model": model, "messages": [...], "response_format": {"type": "json_object"}}`; returns `json.loads(choices[0].message.content)`; raises `LLMError` on HTTP errors, timeouts and invalid JSON.
   - `class TailoredResume(BaseModel)` (`tailor/schema.py`): `language: Literal["pt-br", "en"]`, `summary: str`, `experiences: list[TailoredExperience]`, `projects: list[TailoredProject]`, `skills: list[str]`; `TailoredExperience/TailoredProject` = `{kb_id: str, highlights: list[str]}`.
   - `build_tailor_prompt(*, opening: Opening, kb_text: str, language: str) -> tuple[str, str]` — system prompt pins the guardrail verbatim: *"Use ONLY facts present in the knowledge base below. Never invent employers, roles, dates, projects or skills. Every experience and project in your output must carry the exact kb_id from the knowledge base. Output JSON only."* + language-follows-posting instruction; user prompt = opening (company/title/description) + `kb_text`.
-  - `validate_resume(resume: TailoredResume, kb: KnowledgeBase) -> list[str]` — violation per `kb_id` not present in the KB and per skill not in `kb.skills` (case-insensitive); empty list = valid (R1/F2 guardrail).
+  - `validate_resume(resume: TailoredResume, kb: KnowledgeBase) -> list[str]` — violations for unknown `kb_id`s, summaries not copied verbatim from a KB fact, experience/project highlights not copied verbatim from the referenced KB entry, and skills not in `kb.skills` (case-insensitive); empty list = valid (R1/F2 guardrail).
 
 - [x] **Step 1: Write the failing tests**
 

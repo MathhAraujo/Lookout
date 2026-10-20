@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from lookout.collectors.base import RawOpening
+from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
 
 _URL = "https://api.lever.co/v0/postings/{slug}"
@@ -19,7 +19,9 @@ def _parse_timestamp(value: Any) -> datetime | None:
 
 
 def parse_lever(payload: list[dict], company: str) -> list[RawOpening]:
-    if not isinstance(payload, list) or not company.strip():
+    if not isinstance(payload, list):
+        raise CollectorError("Unexpected top-level payload from Lever")
+    if not company.strip():
         return []
 
     jobs = []

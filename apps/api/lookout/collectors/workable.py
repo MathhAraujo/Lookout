@@ -4,7 +4,7 @@ from urllib.parse import quote
 
 import httpx
 
-from lookout.collectors.base import RawOpening
+from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
 
 _JOBS_URL = "https://apply.workable.com/api/v3/accounts/{slug}/jobs"
@@ -13,8 +13,10 @@ _JOBS_QUERY = {"query": "", "location": [], "department": [], "worktype": [], "r
 
 
 def parse_workable(payload: dict, slug: str, company: str) -> list[RawOpening]:
-    results = payload.get("results")
-    if not isinstance(results, list) or not company.strip():
+    results = payload.get("results") if isinstance(payload, dict) else None
+    if not isinstance(results, list):
+        raise CollectorError("Unexpected top-level payload from Workable")
+    if not company.strip():
         return []
 
     jobs = []

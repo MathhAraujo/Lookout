@@ -40,3 +40,14 @@ def test_prompt_specifies_the_tailored_resume_json_fields():
         "highlights",
     ):
         assert f'"{field}"' in system
+
+
+def test_prompt_requires_verbatim_knowledge_base_facts():
+    system, _ = build_tailor_prompt(
+        opening=SimpleNamespace(company="Globex", title="Engineer", description="Build APIs."),
+        kb_text="[exp-acme] Fictional experience",
+        language="en",
+    )
+
+    assert "summary must be copied verbatim from a KB fact" in system
+    assert "highlights must be copied verbatim from that item's KB highlights" in system

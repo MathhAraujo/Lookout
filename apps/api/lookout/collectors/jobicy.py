@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from lookout.collectors.base import RawOpening
+from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
 
 _URL = "https://jobicy.com/api/v2/remote-jobs"
@@ -47,7 +47,7 @@ def _parse_job(item: Any) -> RawOpening | None:
 
 def parse_jobicy(payload: Any) -> list[RawOpening]:
     if not isinstance(payload, dict) or not isinstance(payload.get("jobs"), list):
-        return []
+        raise CollectorError("Unexpected top-level payload from Jobicy")
 
     jobs = []
     for item in payload["jobs"]:

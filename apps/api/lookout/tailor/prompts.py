@@ -18,7 +18,11 @@ _OUTPUT_SCHEMA = """Return one JSON object using exactly this structure, with no
   "projects": [{"kb_id": "<exact project id from the knowledge base>", "highlights": ["..."]}],
   "skills": ["..."]
 }
-Use "pt-br" instead of "en" when the job posting is in Brazilian Portuguese. Use empty arrays when there are no supported facts. Skills must come from the knowledge base."""
+Use "pt-br" instead of "en" when the job posting is in Brazilian Portuguese.
+Use empty arrays when there are no supported facts. Skills must come from the knowledge base.
+The summary must be copied verbatim from a KB fact; do not combine or paraphrase facts.
+Experience highlights must be copied verbatim from that item's KB highlights.
+Project highlights must be copied verbatim from that item's KB highlights."""
 _LANGUAGE_NAMES = {"en": "English", "pt-br": "Brazilian Portuguese"}
 
 

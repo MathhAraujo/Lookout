@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 
-from lookout.collectors.base import RawOpening
+from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
 
 _SEARCH_URL = "https://hn.algolia.com/api/v1/search"
@@ -46,9 +46,9 @@ def _parse_datetime(value: Any) -> datetime | None:
 
 
 def parse_hn_thread(item: dict, story_title: str) -> list[RawOpening]:
-    children = item.get("children")
+    children = item.get("children") if isinstance(item, dict) else None
     if not isinstance(children, list):
-        return []
+        raise CollectorError("Unexpected top-level payload for HN thread")
 
     jobs = []
     for comment in children:
@@ -97,7 +97,7 @@ class HnWhoIsHiringCollector:
         payload = response.json()
         hits = payload.get("hits") if isinstance(payload, dict) else None
         if not isinstance(hits, list):
-            return []
+            raise CollectorError("Unexpected top-level payload from HN search")
 
         valid_hits = [
             hit
@@ -106,6 +106,8 @@ class HnWhoIsHiringCollector:
             and hit.get("objectID") is not None
             and isinstance(hit.get("title"), str)
         ]
+        if hits and not valid_hits:
+            raise CollectorError("Unexpected story entries in HN search response")
         if not valid_hits:
             return []
 

@@ -11,6 +11,9 @@ class PiiProfile:
     email: str
 
 
+_INTERNATIONAL_PHONE_PATTERN = re.compile(r"(?<!\w)\+\d(?:[ .()-]*\d){6,14}(?!\w)")
+
+
 _CPF_PATTERN = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
 _PHONE_PATTERN = re.compile(r"(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}-?\d{4}")
 
@@ -36,6 +39,7 @@ def redact(text: str, pii: PiiProfile) -> str:
         redacted = re.sub(re.escape(literal), placeholder, redacted, flags=re.IGNORECASE)
 
     redacted = _CPF_PATTERN.sub("[CPF]", redacted)
+    redacted = _INTERNATIONAL_PHONE_PATTERN.sub("[PHONE]", redacted)
     return _PHONE_PATTERN.sub("[PHONE]", redacted)
 
 
@@ -45,4 +49,8 @@ def contains_pii(text: str, pii: PiiProfile) -> bool:
         for literal, _ in _profile_literals(pii)
     ):
         return True
-    return bool(_CPF_PATTERN.search(text) or _PHONE_PATTERN.search(text))
+    return bool(
+        _CPF_PATTERN.search(text)
+        or _PHONE_PATTERN.search(text)
+        or _INTERNATIONAL_PHONE_PATTERN.search(text)
+    )

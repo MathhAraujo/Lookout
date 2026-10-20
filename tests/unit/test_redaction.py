@@ -25,6 +25,13 @@ def test_redact_catches_pii_inside_free_text():
     assert "98765-4321" not in out and "987.654.321-00" not in out
 
 
+def test_redact_catches_international_phone_in_free_text():
+    out = redact("Contact me at +44 20 7946 0958", PII)
+
+    assert "+44 20 7946 0958" not in out
+    assert "[PHONE]" in out
+
+
 def test_redact_keeps_company_names():
     assert "Globex Corporation" in redact("Backend Engineer at Globex Corporation", PII)
 
@@ -32,3 +39,7 @@ def test_redact_keeps_company_names():
 def test_contains_pii():
     assert contains_pii("call 123.456.789-09", PII)
     assert not contains_pii("[CPF] available on request", PII)
+
+
+def test_contains_pii_detects_international_phone():
+    assert contains_pii("Contact me at +44 20 7946 0958", PII)

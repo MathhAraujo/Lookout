@@ -20,9 +20,9 @@ def _parse_datetime(value: Any) -> datetime | None:
 
 
 def parse_adzuna(payload: dict, country: str) -> list[RawOpening]:
-    results = payload.get("results")
+    results = payload.get("results") if isinstance(payload, dict) else None
     if not isinstance(results, list):
-        return []
+        raise CollectorError("Unexpected top-level payload from Adzuna")
 
     jobs = []
     for item in results:

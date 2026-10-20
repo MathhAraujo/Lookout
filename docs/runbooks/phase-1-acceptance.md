@@ -2,7 +2,7 @@
 
 ## Status
 
-Acceptance passed for the required walkthrough. Steps 1–6 and 8 passed; optional Gmail step 7 was skipped because Gmail credentials are unavailable. The first LLM response failed schema validation; after the prompt fix, a retry produced a PDF that was reviewed. No model-generated code was executed.
+Acceptance passed for the required walkthrough. Steps 1–6 and 8 passed; optional Gmail step 7 was skipped because Gmail credentials are unavailable. After the whole-branch review, the privacy, factual-validation, deduplication, and source-schema safeguards were strengthened and verified. No model-generated code was executed.
 
 The API key value was only checked for presence; it was never displayed or recorded. No personal knowledge-base data was read or recorded.
 
@@ -67,9 +67,9 @@ Result: passed; all configured collectors returned stats without aborting the ru
 
 The CLI initially printed empty objects from `list-openings`. Root cause: ORM models were serialized after the session closed and expired their fields. Serialization now occurs inside the session, covered by `test_list_openings_prints_fields_after_session_closes`.
 
-The first request with `minimax/minimax-m3.1-flash:free` returned JSON without required `language` and `experiences` fields; Pydantic rejected it and no PDF was written. The prompt was updated to specify the exact `TailoredResume` JSON shape. After the user authorized retries, the second request produced `data/artifacts/2af51bdc-4151-4c23-a6cc-78ffd1fae50a.pdf`.
+The first request with `minimax/minimax-m3.1-flash:free` returned JSON without required `language` and `experiences` fields; Pydantic rejected it and no PDF was written. After the prompt was updated with the exact `TailoredResume` JSON shape, a second request produced a PDF. Whole-branch review then led to stricter validation requiring summaries to match one KB fact verbatim and highlights to match the referenced KB entry. A third request with those constraints produced the final `data/artifacts/2af51bdc-4151-4c23-a6cc-78ffd1fae50a.pdf`.
 
-PDF review: one page with 1,214 characters of selectable text; English headings and KB-supported skills were present. The content was checked against the fictional KB; no unsupported facts were found. The PDF was generated locally by the application, not by executing model-generated code.
+PDF review: one page with 754 characters of selectable text; English headings and KB-supported skills were present. Validation enforced exact KB source facts before rendering. The PDF was generated locally by the application, not by executing model-generated code.
 
 ## Step 6: Verify the API-to-worker queue
 
@@ -100,7 +100,9 @@ docker compose run --rm --no-deps api ruff format --check apps tests
 docker compose build api worker
 ```
 
-Observed: `62 passed, 2 warnings`; Ruff reported `All checks passed!`; formatter reported `69 files already formatted`; both API and worker images built successfully. The warnings were dependency deprecations from WeasyPrint/harfbuzz and Starlette's TestClient integration.
+Observed: `80 passed, 2 warnings`; Ruff reported `All checks passed!`; formatter reported `70 files already formatted`; both API and worker images built successfully. The warnings were dependency deprecations from WeasyPrint/harfbuzz and Starlette's TestClient integration.
+
+Review hardening: international `+`-prefixed phone numbers are redacted and detected; unsupported summaries/highlights are rejected before PDF rendering; seniority/grade markers prevent distinct roles from deduplicating; unexpected top-level collector payload shapes are surfaced as source errors.
 
 Formatter verification is scoped to `apps` and `tests` per the repository workflow rule; generated Alembic files and documentation are excluded.
 
