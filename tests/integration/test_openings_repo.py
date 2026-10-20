@@ -22,6 +22,7 @@ class RawOpeningFixture:
     description: str
     posted_at: datetime | None
     raw: dict = field(default_factory=dict)
+    application_email: str | None = None
 
 
 def make_raw_opening(

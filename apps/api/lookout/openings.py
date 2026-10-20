@@ -24,6 +24,7 @@ def insert_opening(session: Session, raw: RawOpening) -> Opening:
         posted_at=raw.posted_at,
         dedup_key=dedup_key,
         raw=raw.raw,
+        application_email=raw.application_email,
     )
     session.add(opening)
     session.flush()

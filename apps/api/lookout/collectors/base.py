@@ -14,6 +14,7 @@ class RawOpening:
     description: str
     posted_at: datetime | None
     raw: dict
+    application_email: str | None = None
 
 
 class Collector(Protocol):
