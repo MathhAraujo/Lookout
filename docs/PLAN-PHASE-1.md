@@ -1000,7 +1000,7 @@ Expected: output stats with `inserted > 0`, no errors. Repeat the same command: 
 Run: `docker compose exec api python -m lookout.cli collect`
 Expected: per-source stats for all enabled sources; sources without credentials/config (adzuna, greenhouse/lever with empty company lists, linkedin_email, workable) report an error or zero results **without aborting the run**.
 
-- [ ] **Step 5: Generate a tailored resume with a real LLM call**
+- [x] **Step 5: Generate a tailored resume with a real LLM call**
 
 Run: `docker compose exec api python -m lookout.cli list-openings` then `docker compose exec api python -m lookout.cli tailor <OPENING_ID>`
 Expected: a PDF at `data/artifacts/<OPENING_ID>.pdf`; open it and confirm: correct language (follows the posting), real selectable text, content consistent with `data/kb` (no invented facts).
@@ -1020,7 +1020,7 @@ Expected: LinkedIn alert emails under the configured label become openings with 
 Run: `docker compose exec api pytest -v && docker compose exec api ruff check . && docker compose exec api ruff format --check .`
 Expected: all green. Write the commands + observed outputs into `docs/runbooks/phase-1-acceptance.md`.
 
-- [ ] **Step 9: Commit and push** (major point per `.opencode/rules/git-workflow.md`)
+- [x] **Step 9: Commit and push** (major point per `.opencode/rules/git-workflow.md`)
 
 ```bash
 git add -A && git commit -m "docs: record phase 1 acceptance results" && git push origin HEAD

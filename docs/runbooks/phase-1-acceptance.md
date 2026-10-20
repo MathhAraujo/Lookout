@@ -2,7 +2,7 @@
 
 ## Status
 
-Partial acceptance. Steps 1–4 and 6 passed, and Step 8 verification is green. Step 5 was attempted but the model response failed schema validation, so no PDF was generated. Optional Gmail step 7 was skipped because Gmail credentials are unavailable. Do not treat Phase 1 acceptance as complete until tailoring produces and passes review of a PDF.
+Acceptance passed for the required walkthrough. Steps 1–6 and 8 passed; optional Gmail step 7 was skipped because Gmail credentials are unavailable. The first LLM response failed schema validation; after the prompt fix, a retry produced a PDF that was reviewed. No model-generated code was executed.
 
 The API key value was only checked for presence; it was never displayed or recorded. No personal knowledge-base data was read or recorded.
 
@@ -67,7 +67,9 @@ Result: passed; all configured collectors returned stats without aborting the ru
 
 The CLI initially printed empty objects from `list-openings`. Root cause: ORM models were serialized after the session closed and expired their fields. Serialization now occurs inside the session, covered by `test_list_openings_prints_fields_after_session_closes`.
 
-One real request was made with `minimax/minimax-m3.1-flash:free` using the fictional KB and a public posting. OpenRouter returned JSON that omitted required `language` and `experiences` fields; Pydantic rejected the response and no PDF was written. The prompt now specifies the exact `TailoredResume` JSON shape and has a regression test. No second request has been sent; it awaits explicit authorization.
+The first request with `minimax/minimax-m3.1-flash:free` returned JSON without required `language` and `experiences` fields; Pydantic rejected it and no PDF was written. The prompt was updated to specify the exact `TailoredResume` JSON shape. After the user authorized retries, the second request produced `data/artifacts/2af51bdc-4151-4c23-a6cc-78ffd1fae50a.pdf`.
+
+PDF review: one page with 1,214 characters of selectable text; English headings and KB-supported skills were present. The content was checked against the fictional KB; no unsupported facts were found. The PDF was generated locally by the application, not by executing model-generated code.
 
 ## Step 6: Verify the API-to-worker queue
 
@@ -104,4 +106,4 @@ Formatter verification is scoped to `apps` and `tests` per the repository workfl
 
 ## Step 9: Commit and push
 
-Task 16 remains open until a valid real-LLM response produces a PDF and the PDF is reviewed. A second OpenRouter request awaits explicit authorization.
+The acceptance results are recorded here and in `docs/PLAN-PHASE-1.md`; this checkpoint is committed and pushed to the project branch.
