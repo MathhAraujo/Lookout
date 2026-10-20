@@ -66,7 +66,8 @@ def _collect(settings, source: str | None, enqueue: bool) -> None:
 def _list_openings(settings, limit: int) -> None:
     with session_scope(settings) as session:
         openings = list_openings(session, limit=limit)
-    print(json.dumps([opening.model_dump(mode="json") for opening in openings], indent=2))
+        result = [opening.model_dump(mode="json") for opening in openings]
+    print(json.dumps(result, indent=2))
 
 
 def main() -> None:

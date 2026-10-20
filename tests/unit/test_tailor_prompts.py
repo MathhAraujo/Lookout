@@ -21,3 +21,22 @@ def test_prompt_contains_guardrail_redacted_kb_and_posting():
 
     assert "Never invent" in system and "English" in system
     assert "[exp-acme]" in user and opening.title in user and opening.company in user
+
+
+def test_prompt_specifies_the_tailored_resume_json_fields():
+    system, _ = build_tailor_prompt(
+        opening=SimpleNamespace(company="Globex", title="Engineer", description="Build APIs."),
+        kb_text="[exp-acme] Fictional experience",
+        language="en",
+    )
+
+    for field in (
+        "language",
+        "summary",
+        "experiences",
+        "projects",
+        "skills",
+        "kb_id",
+        "highlights",
+    ):
+        assert f'"{field}"' in system

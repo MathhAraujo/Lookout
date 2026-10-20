@@ -2,16 +2,15 @@
 
 ## Status
 
-Partial acceptance. Steps 2–4 and 6 passed. Step 1 is blocked by local filesystem permissions and missing OpenRouter configuration in the running API container; Step 5 was not run. Optional Gmail step 7 was skipped because Gmail credentials are unavailable. Do not treat Phase 1 acceptance as complete until the remaining required step is verified.
+Partial acceptance. Steps 1–4 and 6 passed, and Step 8 verification is green. Step 5 was attempted but the model response failed schema validation, so no PDF was generated. Optional Gmail step 7 was skipped because Gmail credentials are unavailable. Do not treat Phase 1 acceptance as complete until tailoring produces and passes review of a PDF.
 
-No `.env` contents were displayed or recorded, and no personal knowledge-base data was read or recorded.
+The API key value was only checked for presence; it was never displayed or recorded. No personal knowledge-base data was read or recorded.
 
 ## Step 1: Prepare local data
 
-- `.env` already existed, so it was preserved rather than overwritten.
-- The running API container reported `OPENROUTER_API_KEY` absent. The `.env` value was not read.
-- `data/kb` did not exist. Copying the fictional template failed because `data/` is owned by `root:root` with mode `755`, so the workspace user cannot write there. No ownership or permissions were changed.
-- Result: blocked; configure the key and make the ignored local data directory writable before resuming.
+- `.env` was created from `.env.example`; `OPENROUTER_API_KEY` was set and `OPENROUTER_TAILORING_MODEL` was `minimax/minimax-m3.1-flash:free`.
+- `data/` remains owned by `root:root` with mode `755`. The fictional template was copied to `data/kb` from a one-off Compose container running as root; host ownership and permissions were not changed.
+- Result: prepared with the fictional KB. The host workspace user still cannot edit files under `data/` directly.
 
 ## Step 2: Boot the stack
 
@@ -66,7 +65,9 @@ Result: passed; all configured collectors returned stats without aborting the ru
 
 ## Step 5: Tailor a resume with a real LLM call
 
-Not run. The running API container did not have `OPENROUTER_API_KEY`, and the local KB template could not be copied into `data/kb`. No LLM request was made and no PDF was generated.
+The CLI initially printed empty objects from `list-openings`. Root cause: ORM models were serialized after the session closed and expired their fields. Serialization now occurs inside the session, covered by `test_list_openings_prints_fields_after_session_closes`.
+
+One real request was made with `minimax/minimax-m3.1-flash:free` using the fictional KB and a public posting. OpenRouter returned JSON that omitted required `language` and `experiences` fields; Pydantic rejected the response and no PDF was written. The prompt now specifies the exact `TailoredResume` JSON shape and has a regression test. No second request has been sent; it awaits explicit authorization.
 
 ## Step 6: Verify the API-to-worker queue
 
@@ -91,15 +92,16 @@ Skipped. `data/gmail_credentials.json` was not present, so OAuth was not started
 Commands:
 
 ```bash
-docker compose -f docker-compose.yml -f /tmp/opencode/lookout-compose-port-override.yml exec -T api pytest -v
-docker compose -f docker-compose.yml -f /tmp/opencode/lookout-compose-port-override.yml exec -T api ruff check .
-docker compose -f docker-compose.yml -f /tmp/opencode/lookout-compose-port-override.yml exec -T api ruff format --check apps tests
+docker compose run --rm --no-deps api pytest -q
+docker compose run --rm --no-deps api ruff check .
+docker compose run --rm --no-deps api ruff format --check apps tests
+docker compose build api worker
 ```
 
-Observed: `60 passed, 2 warnings`; Ruff reported `All checks passed!`; formatter reported `68 files already formatted`. The warnings were dependency deprecations from WeasyPrint/harfbuzz and Starlette's TestClient integration.
+Observed: `62 passed, 2 warnings`; Ruff reported `All checks passed!`; formatter reported `69 files already formatted`; both API and worker images built successfully. The warnings were dependency deprecations from WeasyPrint/harfbuzz and Starlette's TestClient integration.
 
 Formatter verification is scoped to `apps` and `tests` per the repository workflow rule; generated Alembic files and documentation are excluded.
 
 ## Step 9: Commit and push
 
-This partial report is being published as a documentation-only checkpoint. Task 16 remains open until the required real-LLM tailoring step is verified; final acceptance is still pending.
+Task 16 remains open until a valid real-LLM response produces a PDF and the PDF is reviewed. A second OpenRouter request awaits explicit authorization.

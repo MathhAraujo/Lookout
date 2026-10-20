@@ -981,7 +981,7 @@ git add -A && git commit -m "feat: add api endpoints, cli and worker scheduling"
 
 This task runs the MVP end-to-end against real services. It requires an `OPENROUTER_API_KEY`; Adzuna and LinkedIn steps are optional (need credentials/OAuth bootstrap).
 
-- [ ] **Step 1: Prepare local data**
+- [x] **Step 1: Prepare local data**
 
 `cp .env.example .env` and fill `OPENROUTER_API_KEY`; `cp -r templates/kb data/kb` (fictional persona or the user's real KB — never committed).
 
