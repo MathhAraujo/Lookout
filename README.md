@@ -3,7 +3,8 @@
 An AI agent that automatically applies to job openings on your behalf.
 Primarily written in Python.
 
-> Status: initial setup. Documentation will grow with the codebase.
+> Status: Phase 1 MVP is implemented. See the [acceptance walkthrough](docs/runbooks/phase-1-acceptance.md)
+> for verification results and credential-dependent integrations.
 
 ## Running (Phase 1 MVP)
 
@@ -50,7 +51,7 @@ lookout/
     ├── rules/              # Specific rules (.md files loaded automatically)
     │   ├── language.md     # Everything written in English
     │   ├── git-workflow.md # Conventional Commits + push at every major point
-    │   ├── stack.md        # Stack and tooling (provisional, pending PRD)
+    │   ├── stack.md        # Stack and tooling (frozen per PRD)
     │   ├── privacy.md      # Personal data protection (data/ is gitignored)
     │   └── conventions.md  # Code conventions
     └── skills/             # Reusable skills (one folder per skill)
