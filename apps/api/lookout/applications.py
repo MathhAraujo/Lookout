@@ -81,6 +81,25 @@ def _sanitize_event_details(details: dict | None) -> dict:
     return sanitize(details)
 
 
+def record_application_event(
+    session: Session,
+    application_id: UUID,
+    *,
+    event_type: str,
+    details: dict | None = None,
+) -> ApplicationEvent:
+    if not event_type.strip():
+        raise ValueError("event type is required")
+    event = ApplicationEvent(
+        application_id=application_id,
+        event_type=event_type,
+        details=_sanitize_event_details(details),
+    )
+    session.add(event)
+    session.flush()
+    return event
+
+
 def upsert_application(
     session: Session,
     opening_id: UUID,
@@ -153,15 +172,12 @@ def transition_application(
         application.submitted_at = now
 
     session.add(application)
-    session.add(
-        ApplicationEvent(
-            application_id=application.id,
-            event_type=event_type,
-            details=sanitized_details,
-            created_at=now,
-        )
+    record_application_event(
+        session,
+        application.id,
+        event_type=event_type,
+        details=sanitized_details,
     )
-    session.flush()
     return application
 
 
