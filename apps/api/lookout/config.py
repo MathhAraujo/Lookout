@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     kb_path: Path = Path("data/kb")
     artifacts_dir: Path = Path("data/artifacts")
     sources_config: Path = Path("config/sources.yml")
+    minio_endpoint_url: str = "http://minio:9000"
+    minio_bucket: str = "lookout-artifacts"
+    minio_access_key: str = ""
+    minio_secret_key: str = ""
     worker_poll_seconds: int = 5
     dedup_company_threshold: float = 90.0
     dedup_title_threshold: float = 90.0

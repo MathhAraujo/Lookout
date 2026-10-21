@@ -12,6 +12,7 @@ dependencies = [
     "uvicorn[standard]",
     "sqlmodel",
     "alembic",
+    "boto3",
     "psycopg[binary]",
     "apscheduler>=3.10,<4",
     "httpx",
