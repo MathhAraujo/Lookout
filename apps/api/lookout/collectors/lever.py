@@ -5,6 +5,7 @@ import httpx
 
 from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
+from lookout.normalize import extract_application_email
 
 _URL = "https://api.lever.co/v0/postings/{slug}"
 
@@ -38,6 +39,7 @@ def parse_lever(payload: list[dict], company: str) -> list[RawOpening]:
         location = categories.get("location") if isinstance(categories, dict) else None
         description = item.get("descriptionPlain")
         external_id = item.get("id")
+        html_content = item.get("content")
         jobs.append(
             RawOpening(
                 source="lever",
@@ -51,6 +53,10 @@ def parse_lever(payload: list[dict], company: str) -> list[RawOpening]:
                 description=description if isinstance(description, str) else "",
                 posted_at=_parse_timestamp(item.get("createdAt")),
                 raw=dict(item),
+                application_email=extract_application_email(
+                    html_content if isinstance(html_content, str) else None,
+                    apply_email_field=item.get("applyEmail"),
+                ),
             )
         )
 

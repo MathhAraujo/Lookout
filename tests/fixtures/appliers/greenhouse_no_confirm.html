@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Senior Backend Engineer | Fictional Sciences</title></head>
+  <body>
+    <main>
+      <h1 class="job-post-title">Senior Backend Engineer</h1>
+      <div id="content" class="job-post"><p>Build fictional platform systems.</p></div>
+      <section id="application" class="job-application">
+        <h2>Apply for this job</h2>
+        <form id="application_form" method="post" action="/no-confirm">
+          <div class="field">
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" type="text" required>
+          </div>
+          <div class="field">
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" type="text" required>
+          </div>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" required>
+          </div>
+          <div class="field attachment">
+            <label for="resume-upload-input">Resume (PDF)</label>
+            <input id="resume-upload-input" type="file" name="resume" required>
+          </div>
+          <ul class="custom-questions-wrapper">
+            <li class="custom-question">
+              <div class="field">
+                <label for="question_104462">Years of Python experience</label>
+                <input id="question_104462" name="question_104462" type="text" required>
+              </div>
+            </li>
+            <li class="custom-question">
+              <div class="field">
+                <label for="question_104463">Are you authorized to work in Brazil?</label>
+                <select id="question_104463" name="question_104463" required>
+                  <option value="">Select an option</option>
+                  <option>Yes, authorized</option>
+                  <option>Requires sponsorship</option>
+                </select>
+              </div>
+            </li>
+          </ul>
+          <button type="submit">Submit Application</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

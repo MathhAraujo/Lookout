@@ -5,6 +5,7 @@ import httpx
 
 from lookout.collectors.base import CollectorError, RawOpening
 from lookout.config import Settings
+from lookout.normalize import extract_application_email
 
 _URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
 
@@ -55,6 +56,10 @@ def parse_greenhouse(payload: dict, company: str) -> list[RawOpening]:
                 description=description if isinstance(description, str) else "",
                 posted_at=_parse_datetime(item.get("updated_at")),
                 raw=dict(item),
+                application_email=extract_application_email(
+                    description if isinstance(description, str) else None,
+                    apply_email_field=item.get("applyEmail"),
+                ),
             )
         )
 

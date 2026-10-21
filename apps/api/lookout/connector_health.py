@@ -30,15 +30,15 @@ _SAFE_HEALTH_DETAILS = {
     "browser_session_healthy",
     "health_check_failed",
 }
-_AUTH_URL_MARKERS = ("/login", "/signin", "/sign-in")
-_AUTH_TEXT_MARKERS = (
+AUTH_URL_MARKERS = ("/login", "/signin", "/sign-in")
+AUTH_TEXT_MARKERS = (
     "login required",
     "please sign in",
     "please log in",
     "sign in to continue",
     "session expired",
 )
-_VERIFICATION_MARKERS = (
+VERIFICATION_MARKERS = (
     "captcha",
     "two-factor",
     "two factor",
@@ -108,11 +108,11 @@ def _check_browser_health(
             )
             page_url = page.url.casefold()
             page_text = page.locator("body").inner_text(timeout=3_000).casefold()
-            if any(marker in page_text for marker in _VERIFICATION_MARKERS):
+            if any(marker in page_text for marker in VERIFICATION_MARKERS):
                 return _snapshot(platform, "degraded", "manual_verification_required")
             if (
-                any(marker in page_url for marker in _AUTH_URL_MARKERS)
-                or any(marker in page_text for marker in _AUTH_TEXT_MARKERS)
+                any(marker in page_url for marker in AUTH_URL_MARKERS)
+                or any(marker in page_text for marker in AUTH_TEXT_MARKERS)
                 or (response is not None and response.status in {401, 403})
             ):
                 return _snapshot(platform, "degraded", "browser_session_expired")
