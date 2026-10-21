@@ -1,0 +1,20 @@
+ideal_job: Senior Python backend engineer
+include_keywords:
+  - Python
+  - FastAPI
+  - PostgreSQL
+exclude_keywords:
+  - commission-only
+  - unpaid
+allowed_languages:
+  - English
+  - Portuguese
+allowed_locations:
+  - Brazil
+  - Worldwide
+allowed_work_modes:
+  - remote
+  - hybrid
+minimum_seniority: senior
+minimum_salary: null
+salary_currency: null

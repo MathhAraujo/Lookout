@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     kb_path: Path = Path("data/kb")
     artifacts_dir: Path = Path("data/artifacts")
     sources_config: Path = Path("config/sources.yml")
+    match_profile_path: Path = Path("data/match-profile.yml")
+    matching_policy_path: Path = Path("config/matching.yml")
+    openrouter_scoring_model: str = ""
     minio_endpoint_url: str = "http://minio:9000"
     minio_bucket: str = "lookout-artifacts"
     minio_access_key: str = ""
