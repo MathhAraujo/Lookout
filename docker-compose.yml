@@ -2,11 +2,12 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: lookout
-      POSTGRES_PASSWORD: lookout
-      POSTGRES_DB: lookout
+      POSTGRES_USER: ${POSTGRES_USER:-lookout}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lookout}
+      POSTGRES_DB: ${POSTGRES_DB:-lookout}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init/create_infisical_database.sql:/docker-entrypoint-initdb.d/02-create_infisical_database.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lookout -d lookout"]
       interval: 5s
@@ -50,6 +51,44 @@ services:
         condition: service_healthy
     restart: "no"
 
+  infisical-redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - infisical_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  infisical:
+    image: infisical/infisical:v0.166.3
+    environment:
+      NODE_ENV: production
+      SITE_URL: ${INFISICAL_SITE_URL:-http://localhost:8081}
+      DB_CONNECTION_URI: postgresql://${POSTGRES_USER:-lookout}:${POSTGRES_PASSWORD:-lookout}@postgres:5432/infisical
+      REDIS_URL: redis://infisical-redis:6379
+      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:?Generate INFISICAL_ENCRYPTION_KEY in .env}
+      AUTH_SECRET: ${INFISICAL_AUTH_SECRET:?Generate INFISICAL_AUTH_SECRET in .env}
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - infisical_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      infisical-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
   api:
     build:
       context: .
@@ -60,11 +99,23 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-lookout-artifacts}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
+      INFISICAL_URL: ${INFISICAL_URL:-http://infisical:8080}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID:-}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-dev}
+      INFISICAL_SECRET_PATH: ${INFISICAL_SECRET_PATH:-/application}
+      DRY_RUN: ${DRY_RUN:-true}
+      AUTO_SUBMIT_ENABLED: ${AUTO_SUBMIT_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_PASSWORD_SECRET_NAME: ${SMTP_PASSWORD_SECRET_NAME:-SMTP_PASSWORD}
     volumes:
       - .:/app
       - ./data:/app/data
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,6 +141,18 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-lookout-artifacts}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
+      INFISICAL_URL: ${INFISICAL_URL:-http://infisical:8080}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID:-}
+      INFISICAL_ENVIRONMENT: ${INFISICAL_ENVIRONMENT:-dev}
+      INFISICAL_SECRET_PATH: ${INFISICAL_SECRET_PATH:-/application}
+      DRY_RUN: ${DRY_RUN:-true}
+      AUTO_SUBMIT_ENABLED: ${AUTO_SUBMIT_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_PASSWORD_SECRET_NAME: ${SMTP_PASSWORD_SECRET_NAME:-SMTP_PASSWORD}
     volumes:
       - .:/app
       - ./data:/app/data
@@ -102,3 +165,5 @@ services:
 volumes:
   pgdata:
   miniodata:
+  infisical_data:
+  infisical_redis_data:

@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +27,18 @@ class Settings(BaseSettings):
     minio_bucket: str = "lookout-artifacts"
     minio_access_key: str = ""
     minio_secret_key: str = ""
+    infisical_url: str = "http://infisical:8080"
+    infisical_client_id: str = ""
+    infisical_client_secret: str = ""
+    infisical_project_id: str = ""
+    infisical_environment: str = "dev"
+    infisical_secret_path: str = "/application"
+    dry_run: bool = True
+    auto_submit_enabled: bool = False
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_from: str = ""
+    smtp_password_secret_name: str = "SMTP_PASSWORD"
     worker_poll_seconds: int = 5
     dedup_company_threshold: float = 90.0
     dedup_title_threshold: float = 90.0

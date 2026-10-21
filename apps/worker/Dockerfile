@@ -15,4 +15,7 @@ COPY apps/api/lookout ./apps/api/lookout
 
 RUN pip install --no-cache-dir -e ".[dev]"
 
+RUN python -m playwright install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
+
 CMD ["python", "-m", "lookout.worker"]

@@ -39,6 +39,61 @@ The API also supports `POST /collect` to enqueue all enabled sources or one
 named source, `GET /openings` to list results, and
 `POST /openings/{opening_id}/tailor` to enqueue resume generation.
 
+## Phase 2 local services and credentials
+
+Before starting the full stack, set unique local values for `MINIO_ACCESS_KEY`
+and `MINIO_SECRET_KEY` in `.env`. Generate the Infisical server keys locally and
+copy the output into the same ignored file; do not commit or paste these values
+into source files:
+
+```bash
+python -c "import secrets; print('MINIO_ACCESS_KEY=' + secrets.token_hex(16)); print('MINIO_SECRET_KEY=' + secrets.token_urlsafe(32))"
+python -c "import secrets; print('INFISICAL_ENCRYPTION_KEY=' + secrets.token_hex(16)); print('INFISICAL_AUTH_SECRET=' + secrets.token_urlsafe(32))"
+```
+
+The Infisical web interface is available at `http://localhost:8081`; the API
+binds to loopback at `http://localhost:8000`. Redis is an internal dependency
+for Infisical only and is not used for the Lookout job queue. MinIO is built
+locally from a pinned official source release, and neither its S3 endpoint nor
+its console is published on the host.
+
+The PostgreSQL initialization script creates the separate `infisical` database
+for fresh volumes. For an existing Phase 1 volume, first check whether the
+database already exists:
+
+```bash
+docker compose exec postgres psql -U lookout -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'infisical'"
+```
+
+Only if that command returns no row, create it once without changing the
+existing Lookout database:
+
+```bash
+docker compose exec postgres createdb -U lookout infisical
+```
+
+On first launch, create a local Infisical project and `dev` environment, then
+create a Universal Auth machine identity with read-only access to the
+`/application` secret path. Keep `INFISICAL_URL` set to the internal Compose
+address `http://infisical:8080`. Put the identity's client ID, client secret,
+project ID, and environment in `.env`. Store `SMTP_PASSWORD` only in Infisical at
+`/application`; configure `SMTP_HOST`, `SMTP_PORT`, and `SMTP_FROM` in `.env`.
+Never put SMTP or job-board passwords in `.env.example`, logs, or application
+records.
+
+After the Phase 2 CLI command is available, initialize Greenhouse and Lever
+browser profiles manually:
+
+```bash
+docker compose exec api python -m lookout.cli browser-auth greenhouse
+docker compose exec api python -m lookout.cli browser-auth lever
+```
+
+Profiles stay under the ignored `data/browser-profiles/` directory. Complete
+Google SSO or password login by hand; CAPTCHA and 2FA are never automated.
+Dry-run remains enabled by default. Real submission requires both
+`DRY_RUN=false` and `AUTO_SUBMIT_ENABLED=true`.
+
 ## OpenCode setup
 
 Agent configuration structure:
