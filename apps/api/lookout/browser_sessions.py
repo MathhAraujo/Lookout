@@ -49,7 +49,7 @@ class BrowserSessionManager:
                 profile_path.mkdir(parents=True, exist_ok=True)
                 runtime = self._playwright_factory()
                 playwright = runtime.__enter__()
-            except Exception:
+            except Exception:  # noqa: BLE001 - any runtime failure must become a sanitized BrowserSessionError
                 raise BrowserSessionError("could not start persistent browser") from None
 
             try:
@@ -58,7 +58,7 @@ class BrowserSessionManager:
                         str(profile_path),
                         headless=headless,
                     )
-                except Exception:
+                except Exception:  # noqa: BLE001 - sanitized launch failure; do not leak Playwright internals
                     raise BrowserSessionError("could not launch persistent browser") from None
 
                 try:
@@ -66,12 +66,12 @@ class BrowserSessionManager:
                 finally:
                     try:
                         context.close()
-                    except Exception:
+                    except Exception:  # noqa: BLE001 - cleanup failures are surfaced as sanitized errors
                         raise BrowserSessionError("could not close persistent browser") from None
             finally:
                 try:
                     runtime.__exit__(None, None, None)
-                except Exception:
+                except Exception:  # noqa: BLE001 - cleanup failures are surfaced as sanitized errors
                     raise BrowserSessionError("could not stop browser runtime") from None
         finally:
             lock.release()

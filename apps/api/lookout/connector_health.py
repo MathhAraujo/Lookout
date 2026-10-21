@@ -80,7 +80,7 @@ def _check_email_health(settings: Settings, secrets: SecretProvider) -> Connecto
             settings.smtp_password_secret_name,
             path=settings.infisical_secret_path,
         )
-    except Exception:
+    except SecretProviderError:
         return _snapshot("email", "unavailable", "smtp_secret_unavailable")
     if not password:
         return _snapshot("email", "unavailable", "smtp_secret_unavailable")
@@ -120,10 +120,14 @@ def _check_browser_health(
                 return _snapshot(platform, "unavailable", "browser_platform_unavailable")
             if response.status >= 400:
                 return _snapshot(platform, "degraded", "browser_platform_unavailable")
-            return _snapshot(platform, "healthy", "browser_session_healthy", last_success_at=utcnow())
+            return _snapshot(
+                platform, "healthy", "browser_session_healthy", last_success_at=utcnow()
+            )
     except BrowserSessionInUseError:
         return _snapshot(platform, "degraded", "browser_profile_in_use")
-    except Exception:
+    # Fail-closed: Playwright raises many exception types on this boundary; degrade the
+    # snapshot instead of crashing the daily connectivity check.
+    except Exception:  # noqa: BLE001
         return _snapshot(platform, "unavailable", "browser_session_unavailable")
 
 

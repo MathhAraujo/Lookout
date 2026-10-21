@@ -1,5 +1,4 @@
 import multiprocessing
-from contextlib import contextmanager
 from pathlib import Path
 from queue import Empty
 
@@ -111,11 +110,15 @@ def test_manager_rejects_simultaneous_profile_use_in_another_process(tmp_path):
 
 def test_manager_releases_profile_lock_when_browser_launch_fails(tmp_path):
     failed_factory, _, _, _ = make_playwright_factory(error=RuntimeError("fictional launch error"))
-    manager = BrowserSessionManager(tmp_path / "browser-profiles", playwright_factory=failed_factory)
+    manager = BrowserSessionManager(
+        tmp_path / "browser-profiles", playwright_factory=failed_factory
+    )
 
-    with pytest.raises(BrowserSessionError, match="could not launch persistent browser"):
-        with manager.open("greenhouse", headless=True):
-            pytest.fail("a failed browser launch must not yield a context")
+    with (
+        pytest.raises(BrowserSessionError, match="could not launch persistent browser"),
+        manager.open("greenhouse", headless=True),
+    ):
+        pytest.fail("a failed browser launch must not yield a context")
 
     working_factory, _, _, _ = make_playwright_factory()
     with BrowserSessionManager(
@@ -128,6 +131,8 @@ def test_manager_releases_profile_lock_when_browser_launch_fails(tmp_path):
 def test_manager_rejects_unsupported_platform(tmp_path):
     manager = BrowserSessionManager(tmp_path / "browser-profiles")
 
-    with pytest.raises(ValueError, match="unsupported browser platform"):
-        with manager.open("linkedin", headless=True):
-            pytest.fail("unsupported platform must not launch a browser")
+    with (
+        pytest.raises(ValueError, match="unsupported browser platform"),
+        manager.open("linkedin", headless=True),
+    ):
+        pytest.fail("unsupported platform must not launch a browser")

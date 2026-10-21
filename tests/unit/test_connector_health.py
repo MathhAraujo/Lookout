@@ -103,7 +103,7 @@ def test_email_health_checks_secret_and_smtp_connectivity(monkeypatch):
     assert snapshot.detail == "smtp_available"
     assert snapshot.last_success_at is not None
     assert secrets.calls == [("SMTP_PASSWORD", "/application")]
-    assert calls == [(('smtp.example.test', 2525), 5)]
+    assert calls == [(("smtp.example.test", 2525), 5)]
     assert "fictional-smtp-password" not in str(snapshot)
 
 

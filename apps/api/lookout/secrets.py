@@ -32,7 +32,7 @@ class InfisicalSecretProvider:
 
         try:
             client = self._client_factory(host=settings.infisical_url)
-        except Exception:
+        except Exception:  # noqa: BLE001 - any construction failure must become a sanitized message instead of leaking SDK details
             raise SecretProviderError("Infisical service is unavailable") from None
 
         value: str | None = None
@@ -51,12 +51,12 @@ class InfisicalSecretProvider:
             value = getattr(secret, "secretValue", None)
             if not isinstance(value, str) or not value:
                 failure = "requested Infisical secret is missing"
-        except Exception:
+        except Exception:  # noqa: BLE001 - auth and retrieval failures are sanitized; SDK exceptions are an internal detail
             failure = "Infisical secret retrieval failed"
 
         try:
             client.close()
-        except Exception:
+        except Exception:  # noqa: BLE001 - cleanup is best-effort and must not leak SDK errors
             if failure is None:
                 failure = "Infisical client cleanup failed"
 
