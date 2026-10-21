@@ -1,0 +1,24 @@
+facts:
+  - key: work_authorization
+    value: "Yes"
+    allowed_values:
+      - "Yes"
+      - "No"
+  - key: sponsorship
+    value: "No"
+    allowed_values:
+      - "Yes"
+      - "No"
+  - key: salary
+    value: "90000 USD"
+  - key: start_date
+    value: "Two weeks"
+  - key: relocation
+    value: "No"
+    allowed_values:
+      - "Yes"
+      - "No"
+  - key: location
+    value: "Sao Paulo, Brazil"
+  - key: experience_years
+    value: "5"
