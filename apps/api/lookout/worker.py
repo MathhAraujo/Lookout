@@ -11,8 +11,7 @@ from lookout.config import Settings, get_settings
 from lookout.db import session_scope
 from lookout.ingest import IngestStats, collect_source
 from lookout.llm import OpenRouterClient
-from lookout.models import Job
-from lookout.queue import claim_next, complete, enqueue, fail, reap_stale
+from lookout.queue import claim_next, complete, enqueue, fail, heartbeat, owned_job, reap_stale
 from lookout.tailor.pipeline import tailor_resume
 
 logger = logging.getLogger(__name__)
@@ -72,7 +71,13 @@ def process_next_job(session: Session, settings: Settings) -> bool:
     job_id = job.id
     job_type = job.type
     payload = dict(job.payload)
+    attempt = job.attempts
     session.commit()
+    stop_heartbeat = threading.Event()
+    lease_thread = threading.Thread(
+        target=_maintain_lease, args=(settings, job_id, attempt, stop_heartbeat), daemon=True
+    )
+    lease_thread.start()
 
     try:
         handler = JOB_HANDLERS.get(job_type)
@@ -81,17 +86,32 @@ def process_next_job(session: Session, settings: Settings) -> bool:
         handler(session, settings, payload)
     except Exception as exc:  # noqa: BLE001
         session.rollback()
-        failed_job = session.get(Job, job_id)
+        failed_job = owned_job(session, job_id, attempt)
         if failed_job is not None:
-            fail(session, failed_job, str(exc))
+            fail(session, failed_job, f"Job failed ({type(exc).__name__})")
             session.commit()
         return True
+    finally:
+        stop_heartbeat.set()
+        lease_thread.join(timeout=5)
 
-    completed_job = session.get(Job, job_id)
+    completed_job = owned_job(session, job_id, attempt)
     if completed_job is not None:
         complete(session, completed_job)
         session.commit()
+    else:
+        session.rollback()
     return True
+
+
+def _maintain_lease(settings: Settings, job_id, attempt: int, stop: threading.Event) -> None:
+    while not stop.wait(60):
+        try:
+            with session_scope(settings) as session:
+                if not heartbeat(session, job_id, attempt):
+                    return
+        except Exception:  # noqa: BLE001 - do not log database payloads or credentials
+            logger.warning("Unable to renew worker lease")
 
 
 def enqueue_collect_job(settings: Settings, source: str) -> None:

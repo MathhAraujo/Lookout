@@ -21,7 +21,7 @@ def test_process_next_job_marks_failure(session, settings, monkeypatch):
     process_next_job(session, settings)
     session.refresh(job)
 
-    assert job.status == "failed" and "collector exploded" in job.last_error
+    assert job.status == "failed" and job.last_error == "Job failed (RuntimeError)"
 
 
 def test_collect_all_job_fans_out_to_independent_source_jobs(session, settings, monkeypatch):

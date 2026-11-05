@@ -51,3 +51,41 @@ def test_reap_stale_returns_crashed_jobs_to_pending(session):
     assert reap_stale(session) == 1
     session.refresh(job)
     assert job.status == "pending"
+
+
+def test_stale_job_exhausts_retry_budget(session):
+    job = enqueue(session, "collect", {}, max_attempts=1)
+    claim_next(session)
+    job.updated_at = utcnow() - timedelta(hours=1)
+    session.add(job)
+    session.commit()
+    assert reap_stale(session) == 1
+    assert job.status == "failed" and claim_next(session) is None
+
+
+def test_heartbeat_keeps_live_job_out_of_stale_recovery(session):
+    from lookout.queue import heartbeat
+
+    job = enqueue(session, "collect", {})
+    claim_next(session)
+    job.updated_at = utcnow() - timedelta(hours=1)
+    session.add(job)
+    session.flush()
+    assert heartbeat(session, job.id, job.attempts)
+    assert reap_stale(session) == 0
+    assert not heartbeat(session, job.id, job.attempts + 1)
+
+
+def test_old_attempt_cannot_finalize_a_reclaimed_job(session):
+    from lookout.queue import owned_job
+
+    job = enqueue(session, "collect", {})
+    claim_next(session)
+    old_attempt = job.attempts
+    job.updated_at = utcnow() - timedelta(hours=1)
+    session.add(job)
+    session.commit()
+    reap_stale(session)
+    claim_next(session)
+    assert owned_job(session, job.id, old_attempt) is None
+    assert owned_job(session, job.id, old_attempt + 1) is job
