@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     smtp_host: str = ""
     smtp_port: int = Field(default=587, ge=1, le=65535)
     smtp_from: str = ""
+    smtp_username: str = ""
     smtp_password_secret_name: str = "SMTP_PASSWORD"
     worker_poll_seconds: int = 5
     dedup_company_threshold: float = 90.0

@@ -28,6 +28,8 @@ class _RecordingSMTP:
         self.port = port
         self.log = log
         self.sendmail_calls = []
+        self.events = []
+        self.login_args = None
         log.append(self)
 
     def __enter__(self):
@@ -36,7 +38,16 @@ class _RecordingSMTP:
     def __exit__(self, *exc):
         return None
 
+    def starttls(self, *, context):
+        self.events.append("tls")
+        assert context.check_hostname
+
+    def login(self, username, password):
+        self.events.append("login")
+        self.login_args = (username, password)
+
     def sendmail(self, *, from_addr, to_addrs, msg):
+        self.events.append("send")
         self.sendmail_calls.append((from_addr, tuple(to_addrs), msg))
 
 
@@ -149,6 +160,8 @@ def test_submit_sends_once_to_the_explicit_target_with_pdf_attachment(tmp_path):
     assert (result.status, result.detail) == ("submitted", "email_sent")
     assert secrets.calls == [("SMTP_PASSWORD", "/application")]
     assert len(connections) == 1
+    assert connections[0].events == ["tls", "login", "send"]
+    assert connections[0].login_args == ("ada@fictional.test", "fake-smtp-password")
     from_addr, to_addrs, msg = connections[0].sendmail_calls[0]
     assert connections[0].host == "smtp.fictional.test"
     assert connections[0].port == 2525
@@ -336,3 +349,27 @@ def test_inspect_returns_an_empty_form():
 
     assert form.fields == []
     assert secrets.calls == []
+
+
+def test_tls_failure_never_authenticates_or_sends(tmp_path):
+    connections = []
+
+    class BrokenTLS(_RecordingSMTP):
+        def starttls(self, *, context):
+            raise RuntimeError("TLS unavailable")
+
+    applier = EmailApplier(
+        make_settings(),
+        _FakeSecrets(),
+        smtp_factory=lambda host, port: BrokenTLS(host, port, connections),
+    )
+    result = applier.submit(
+        make_application(),
+        _targeted_opening(),
+        resume_path=_resume(tmp_path),
+        answers=[],
+        dry_run=False,
+        auto_submit_enabled=True,
+    )
+    assert result.status == "manual_assist"
+    assert connections[0].login_args is None and connections[0].sendmail_calls == []

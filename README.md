@@ -114,7 +114,9 @@ create a Universal Auth machine identity with read-only access to the
 `/application` secret path. Keep `INFISICAL_URL` set to the internal Compose
 address `http://infisical:8080`. Put the identity's client ID, client secret,
 project ID, and environment in `.env`. Store `SMTP_PASSWORD` only in Infisical at
-`/application`; configure `SMTP_HOST`, `SMTP_PORT`, and `SMTP_FROM` in `.env`.
+`/application`; configure `SMTP_HOST`, `SMTP_PORT` (STARTTLS, usually 587), and `SMTP_FROM` in `.env`.
+Set `SMTP_USERNAME` when the authentication user differs from the sender address.
+TLS and authentication must succeed before any application email is sent.
 Never put SMTP or job-board passwords in `.env.example`, logs, or application
 records.
 

@@ -2,6 +2,7 @@
 
 import re
 import smtplib
+import ssl
 from collections.abc import Callable
 from email.message import EmailMessage
 from pathlib import Path
@@ -75,11 +76,13 @@ class EmailApplier:
         settings: Settings,
         secrets: Any,
         *,
-        smtp_factory: Callable[..., Any] = smtplib.SMTP,
+        smtp_factory: Callable[..., Any] | None = None,
     ) -> None:
         self._settings = settings
         self._secrets = secrets
-        self._smtp_factory = smtp_factory
+        self._smtp_factory = smtp_factory or (
+            lambda host, port: smtplib.SMTP(host, port, timeout=30)
+        )
 
     def inspect(self, opening: Any, *, resume_path: Path) -> ApplicationForm:
         """Email applications carry no screenable form fields."""
@@ -124,6 +127,8 @@ class EmailApplier:
         message = self._build_message(opening, resume_path)
         try:
             with self._smtp_factory(self._settings.smtp_host, self._settings.smtp_port) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                smtp.login(self._settings.smtp_username or self._settings.smtp_from, password)
                 smtp.sendmail(
                     from_addr=self._settings.smtp_from,
                     to_addrs=[target],
