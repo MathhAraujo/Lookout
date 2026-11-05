@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from dataclasses import dataclass
 
 
@@ -12,10 +13,30 @@ class PiiProfile:
 
 
 _INTERNATIONAL_PHONE_PATTERN = re.compile(r"(?<!\w)\+\d(?:[ .()-]*\d){6,14}(?!\w)")
+_CPF_PATTERN = re.compile(r"(?<!\d)\d{3}[ .]?\d{3}[ .]?\d{3}[- .]?\d{2}(?!\d)")
+_PHONE_PATTERN = re.compile(r"(?<!\w)(?:\+?55[ .()-]*)?\(?\d{2}\)?[ .-]*9?\d{4}[ .-]*\d{4}(?!\w)")
+_EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}")
+_GENERIC_PATTERNS = (
+    (_EMAIL_PATTERN, "[EMAIL]"),
+    (_CPF_PATTERN, "[CPF]"),
+    (_INTERNATIONAL_PHONE_PATTERN, "[PHONE]"),
+    (_PHONE_PATTERN, "[PHONE]"),
+)
 
 
-_CPF_PATTERN = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
-_PHONE_PATTERN = re.compile(r"(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}-?\d{4}")
+def _fold(text: str) -> tuple[str, list[int]]:
+    """Normalize accents and separators while retaining original character offsets."""
+    letters, offsets = [], []
+    for index, character in enumerate(text):
+        for folded in unicodedata.normalize("NFKD", character.casefold()):
+            if unicodedata.combining(folded):
+                continue
+            value = folded if folded.isalnum() else " "
+            if value == " " and (not letters or letters[-1] == " "):
+                continue
+            letters.append(value)
+            offsets.append(index)
+    return "".join(letters), offsets
 
 
 def _profile_literals(pii: PiiProfile) -> list[tuple[str, str]]:
@@ -26,31 +47,44 @@ def _profile_literals(pii: PiiProfile) -> list[tuple[str, str]]:
         (pii.address, "[ADDRESS]"),
         (pii.email, "[EMAIL]"),
     ]
-    return sorted(
-        ((value, placeholder) for value, placeholder in literals if value),
-        key=lambda pair: len(pair[0]),
-        reverse=True,
-    )
+    # A free-text copy often omits middle names or the city/state suffix.
+    names = pii.full_name.split()
+    if len(names) > 2:
+        literals.append((f"{names[0]} {names[-1]}", "[CANDIDATE_NAME]"))
+    street = re.split(r"\s[-–—]\s", pii.address, maxsplit=1)[0]
+    if street and street != pii.address:
+        literals.append((street, "[ADDRESS]"))
+    return [(value, placeholder) for value, placeholder in literals if value.strip()]
+
+
+def _profile_spans(text: str, pii: PiiProfile) -> list[tuple[int, int, str]]:
+    folded, offsets = _fold(text)
+    spans = []
+    for literal, placeholder in _profile_literals(pii):
+        normalized = _fold(literal)[0].strip()
+        if not normalized:
+            continue
+        for match in re.finditer(rf"(?<!\w){re.escape(normalized)}(?!\w)", folded):
+            spans.append((offsets[match.start()], offsets[match.end() - 1] + 1, placeholder))
+    return spans
 
 
 def redact(text: str, pii: PiiProfile) -> str:
-    redacted = text
-    for literal, placeholder in _profile_literals(pii):
-        redacted = re.sub(re.escape(literal), placeholder, redacted, flags=re.IGNORECASE)
-
-    redacted = _CPF_PATTERN.sub("[CPF]", redacted)
-    redacted = _INTERNATIONAL_PHONE_PATTERN.sub("[PHONE]", redacted)
-    return _PHONE_PATTERN.sub("[PHONE]", redacted)
+    spans = sorted(_profile_spans(text, pii), key=lambda span: (span[0], -span[1]))
+    parts, cursor = [], 0
+    for start, end, placeholder in spans:
+        if start < cursor:
+            continue
+        parts.extend([text[cursor:start], placeholder])
+        cursor = end
+    parts.append(text[cursor:])
+    redacted = "".join(parts)
+    for pattern, placeholder in _GENERIC_PATTERNS:
+        redacted = pattern.sub(placeholder, redacted)
+    return redacted
 
 
 def contains_pii(text: str, pii: PiiProfile) -> bool:
-    if any(
-        re.search(re.escape(literal), text, flags=re.IGNORECASE)
-        for literal, _ in _profile_literals(pii)
-    ):
-        return True
-    return bool(
-        _CPF_PATTERN.search(text)
-        or _PHONE_PATTERN.search(text)
-        or _INTERNATIONAL_PHONE_PATTERN.search(text)
+    return bool(_profile_spans(text, pii)) or any(
+        pattern.search(text) for pattern, _ in _GENERIC_PATTERNS
     )

@@ -24,7 +24,7 @@
         {% for experience in experiences %}
         <article>
           <h3>{{ experience.role }} — {{ experience.company }}</h3>
-          <p class="dates">{{ experience.start }} – {{ experience.end or "Present" }}</p>
+          <p class="dates">{{ experience.start }} – {{ experience.end or headings.present }}</p>
           <p>{{ experience.summary }}</p>
           {% if experience.highlights %}
           <ul>
@@ -63,6 +63,11 @@
       <section>
         <h2>{{ headings.skills }}</h2>
         <p>{{ resume.skills | join(", ") }}</p>
+      </section>
+
+      <section>
+        <h2>{{ headings.languages }}</h2>
+        <p>{{ languages | join(", ") }}</p>
       </section>
 
       <section>

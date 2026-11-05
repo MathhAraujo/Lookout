@@ -85,6 +85,11 @@ In: **Greenhouse, Lever, email**. Out: LinkedIn, Gupy and similar (F9).
 ### 5.4 Resume Tailor (Q11, Q12)
 - Selects/rewrites ONLY facts present in the knowledge base; never invents (Q12).
 - Permanent sections + adaptable experience/tools sections (Q12).
+- Phase 1 privacy clarification: the personal header is local-only and immutable.
+  The LLM selects approved body facts by identifier/index; local rendering supplies
+  all text, including approved language variants. Free-form rewriting is deferred
+  until an equally reliable factual-validation strategy is available. See
+  [ADR-0001](adr/0001-local-resume-header-and-approved-content.md).
 - Output: PDF, language follows the posting (PT-BR/EN), strongly ATS-friendly
   (single-column, standard headings, real text — detailed ATS research later).
 - **Error taxonomy (F2 — pending confirmation C1):**

@@ -19,6 +19,8 @@ _HEADINGS = {
         "projects": "Projects",
         "skills": "Skills",
         "education": "Education",
+        "languages": "Languages",
+        "present": "Present",
     },
     "pt-br": {
         "summary": "Resumo",
@@ -26,6 +28,8 @@ _HEADINGS = {
         "projects": "Projetos",
         "skills": "Competências",
         "education": "Formação",
+        "languages": "Idiomas",
+        "present": "Atual",
     },
 }
 
@@ -84,6 +88,7 @@ def render_resume_html(resume: TailoredResume, kb: KnowledgeBase) -> str:
         experiences=experiences,
         projects=projects,
         education=kb.education,
+        languages=kb.languages,
         headings=_HEADINGS[resume.language],
         css=css,
     )

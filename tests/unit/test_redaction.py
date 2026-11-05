@@ -43,3 +43,16 @@ def test_contains_pii():
 
 def test_contains_pii_detects_international_phone():
     assert contains_pii("Contact me at +44 20 7946 0958", PII)
+
+
+def test_redaction_handles_identity_format_variants():
+    for text in (
+        "Maria  Silva",
+        "Mária\nSilva",
+        "Rua das Flores, 123",
+        "(11) 98765 4321",
+        "another.person@example.com",
+    ):
+        assert contains_pii(text, PII)
+        output = redact(text, PII)
+        assert output != text and not contains_pii(output, PII)

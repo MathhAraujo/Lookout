@@ -29,14 +29,18 @@ class Project:
 
 
 @dataclass
-class KnowledgeBase:
-    identity: PiiProfile
+class ResumeContent:
     summary: str
     experiences: list[Experience]
     projects: list[Project]
     skills: list[str]
     languages: list[str]
     education: list[str]
+
+
+@dataclass
+class KnowledgeBase(ResumeContent):
+    identity: PiiProfile
 
 
 class KnowledgeBaseError(Exception):
@@ -60,12 +64,12 @@ def _string_list(metadata: dict, key: str, source: Path) -> list[str]:
 def _load_document(path: Path):
     try:
         return frontmatter.load(path)
-    except (OSError, UnicodeError, yaml.YAMLError) as exc:
-        raise KnowledgeBaseError(f"Unable to load knowledge base file {path}: {exc}") from exc
+    except (OSError, UnicodeError, yaml.YAMLError):
+        raise KnowledgeBaseError(f"Unable to load knowledge base file {path.name}") from None
 
 
 def _missing_required_files(path: Path) -> list[str]:
-    required = ["identity.md", "summary.md", "skills.md", "languages.md", "education.md"]
+    required = ["summary.md", "skills.md", "languages.md", "education.md"]
     missing = [name for name in required if not (path / name).is_file()]
 
     for folder in ("experiences", "projects"):
@@ -119,35 +123,56 @@ def _load_items(path: Path) -> list[str]:
     return _string_list(document.metadata, "items", path)
 
 
-def load_knowledge_base(path: Path) -> KnowledgeBase:
+def load_identity(path: Path) -> PiiProfile:
+    """Local-only header. Never serialize this object into an LLM prompt."""
+    metadata = _load_document(path / "identity.md").metadata
+    return PiiProfile(
+        full_name=_required_string(metadata, "full_name", path / "identity.md"),
+        cpf=str(metadata.get("cpf") or ""),
+        phone=str(metadata.get("phone") or ""),
+        address=str(metadata.get("address") or ""),
+        email=_required_string(metadata, "email", path / "identity.md"),
+    )
+
+
+def load_resume_content(path: Path, *, language: str | None = None) -> ResumeContent:
+    if language not in {None, "en", "pt-br"}:
+        raise KnowledgeBaseError("Unsupported resume language")
+    root_summary = _load_document(path / "summary.md")
+    base_language = root_summary.metadata.get("language", "en")
+    if language and language != base_language:
+        path = path / "translations" / language
     missing = _missing_required_files(path)
     if missing:
         raise KnowledgeBaseError(
-            f"Missing required knowledge base files in {path}: {', '.join(missing)}"
+            f"Missing approved resume content for {language or base_language}: {', '.join(missing)}"
         )
-
-    identity_document = _load_document(path / "identity.md")
-    identity_metadata = identity_document.metadata
-    identity = PiiProfile(
-        full_name=_required_string(identity_metadata, "full_name", path / "identity.md"),
-        cpf=_required_string(identity_metadata, "cpf", path / "identity.md"),
-        phone=_required_string(identity_metadata, "phone", path / "identity.md"),
-        address=_required_string(identity_metadata, "address", path / "identity.md"),
-        email=_required_string(identity_metadata, "email", path / "identity.md"),
-    )
-
-    return KnowledgeBase(
-        identity=identity,
-        summary=_load_document(path / "summary.md").content.strip(),
+    summary = _load_document(path / "summary.md")
+    if language and summary.metadata.get("language", base_language) != language:
+        raise KnowledgeBaseError("Resume content language does not match the posting")
+    content = ResumeContent(
+        summary=summary.content.strip(),
         experiences=_load_experiences(path),
         projects=_load_projects(path),
         skills=_load_items(path / "skills.md"),
         languages=_load_items(path / "languages.md"),
         education=_load_items(path / "education.md"),
     )
+    for items in (content.experiences, content.projects):
+        ids = [item.id for item in items]
+        if len(ids) != len(set(ids)):
+            raise KnowledgeBaseError("Duplicate knowledge-base identifiers")
+    if not content.summary:
+        raise KnowledgeBaseError("Resume summary must not be empty")
+    return content
 
 
-def kb_to_prompt_text(kb: KnowledgeBase) -> str:
+def load_knowledge_base(path: Path, *, language: str | None = None) -> KnowledgeBase:
+    content = load_resume_content(path, language=language)
+    return KnowledgeBase(identity=load_identity(path), **vars(content))
+
+
+def kb_to_prompt_text(kb: ResumeContent) -> str:
     lines = ["Summary:", kb.summary, "", "Experiences:"]
 
     for experience in kb.experiences:
@@ -155,7 +180,9 @@ def kb_to_prompt_text(kb: KnowledgeBase) -> str:
         lines.append(f"[{experience.id}] {experience.role} at {experience.company} ({dates})")
         if experience.summary:
             lines.append(experience.summary)
-        lines.extend(f"- {highlight}" for highlight in experience.highlights)
+        lines.extend(
+            f"- [{index}] {highlight}" for index, highlight in enumerate(experience.highlights)
+        )
         if experience.tech:
             lines.append(f"Technology: {', '.join(experience.tech)}")
 
@@ -164,7 +191,9 @@ def kb_to_prompt_text(kb: KnowledgeBase) -> str:
         lines.append(f"[{project.id}] {project.name}")
         if project.summary:
             lines.append(project.summary)
-        lines.extend(f"- {highlight}" for highlight in project.highlights)
+        lines.extend(
+            f"- [{index}] {highlight}" for index, highlight in enumerate(project.highlights)
+        )
         if project.tech:
             lines.append(f"Technology: {', '.join(project.tech)}")
 

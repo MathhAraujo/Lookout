@@ -1,0 +1,6 @@
+{
+  "language": "en",
+  "experiences": [{"kb_id": "exp-acme", "highlights": [0]}],
+  "projects": [{"kb_id": "proj-lookout", "highlights": [0]}],
+  "skills": ["Python", "FastAPI"]
+}

@@ -39,6 +39,35 @@ The API also supports `POST /collect` to enqueue all enabled sources or one
 named source, `GET /openings` to list results, and
 `POST /openings/{opening_id}/tailor` to enqueue resume generation.
 
+## Base resume and fixed personal header
+
+The base resume is structured Markdown under `data/kb`, not a PDF sent to an LLM.
+`identity.md` is the local-only header: name, email, phone, and address are inserted
+by the renderer and remain identical across tailored versions. CPF is optional
+and is never displayed in the resume. The model cannot read or edit the header.
+
+Keep all personal/contact details in `identity.md`. Professional body files are
+checked for accidental personal data before inference. The posting is redacted
+separately. Never put credentials or additional personal details in body files.
+
+The model selects and orders approved experience/project IDs, numbered highlights,
+and skills. It cannot author new resume text. The application resolves those
+selections against the base resume, rejecting unknown IDs, invented skills,
+out-of-range highlights, and extra fields. Summary, education, and languages
+remain permanent sections. This prioritizes factual correctness over free-form
+rewriting in Phase 1.
+
+Set `language: en` or `language: pt-br` in the frontmatter of the root `summary.md`.
+For the other posting language, maintain an approved body under
+`data/kb/translations/<language>/` with the same body-file structure and its own
+`summary.md` language marker. The root header is shared by both languages.
+The starter template includes English and Brazilian Portuguese examples; replace
+all fictional content in both versions with your approved facts. Missing
+translations fail before inference rather than generating a mixed-language PDF.
+
+Only the final PDF receives the local header. Failed generation preserves any
+previous PDF and never publishes a partially written file.
+
 ## Phase 2 local services and credentials
 
 The default `docker-compose.yml` starts only PostgreSQL, API, and worker.
