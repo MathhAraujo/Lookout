@@ -1,6 +1,114 @@
 # Phase 1 Acceptance Walkthrough
 
-## Status
+## Re-acceptance — 2026-11-05
+
+Implementation and local regression gates passed. Live OpenRouter acceptance for
+the new selection contract remains pending: no API key was configured during
+this run. The fictional EN/PT-BR PDFs below used HTTP-stubbed inference, not a
+real model response. Gmail/Adzuna and curated ATS live checks remain dependent
+on user credentials/configuration. The historical walkthrough follows this
+section and is not evidence of a real-model call with the new contract.
+
+### Scope and privacy boundary
+
+- `identity.md` is local-only. The LLM receives professional `ResumeContent` and
+  the redacted posting, never the header.
+- Strict fact selection replaces model-authored resume text. IDs, highlight
+  indices, and skills are checked before local rendering. Permanent sections
+  and header values come from approved local files.
+- Approved `translations/pt-br/` content is included in the fictional template;
+  missing translations stop generation before inference.
+- Regressions cover formatted identity variants, header edits, invented facts,
+  posting-language mismatch, atomic PDF failure/permissions, concurrent ingestion,
+  source transaction rollback, changed external IDs, technology distinctions,
+  bounded stale retries, heartbeats, stale-attempt fencing, and Gmail pagination.
+- The two previously identified Phase 2 defects were also corrected: SMTP now
+  requires TLS/authentication, and expired reviews cannot be approved before
+  scheduled cleanup.
+
+### Full regression gates
+
+A temporary Python 3.13 environment installed the project with `.[dev]`. Tests
+used an isolated PostgreSQL 16 database whose name ends in `_test`.
+
+```bash
+pytest -q
+ruff check .
+ruff format --check apps tests
+```
+
+Results: **293 passed**, one Starlette/TestClient dependency deprecation warning;
+Ruff passed; **111 files already formatted**. Both Python 3.12 API and worker
+images built successfully. The host suite includes local Chromium-backed
+Greenhouse/Lever fixture tests; no real application was submitted.
+
+The API-to-worker acceptance test exercises collection twice, exact persisted
+job completion, HTTP JSON inference, and a real text PDF with a fixed header:
+`tests/integration/test_phase1_acceptance.py`.
+
+### Isolated Docker startup and migrations
+
+```bash
+docker compose --env-file .env.example -p lookout-phase1-acceptance \
+  -f docker-compose.yml -f docker/acceptance/phase1.override.yml up -d --build
+docker compose --env-file .env.example -p lookout-phase1-acceptance \
+  -f docker-compose.yml -f docker/acceptance/phase1.override.yml ps
+docker compose --env-file .env.example -p lookout-phase1-acceptance \
+  -f docker-compose.yml -f docker/acceptance/phase1.override.yml exec -T api alembic check
+```
+
+Observed: only PostgreSQL, API, and worker started. PostgreSQL and API became
+healthy; worker ran. Startup applied migrations through `0003`; `alembic check`
+reported `No new upgrade operations detected.` HTTP health returned
+`200 {"status": "ok"}`. The random host API port was 32770, then 32771 after the final image
+recreation; health returned HTTP 200 again.
+
+The override uses committed fictional templates, an independent PostgreSQL
+volume, no host data mounts, and `.env.example`. Personal KB files and real
+credentials were not loaded by the acceptance stack.
+
+### Live collection and API-to-worker path
+
+The isolated API container ran `python -m lookout.cli collect --source remoteok`.
+Observed: `fetched=99`, `inserted=99`, `duplicates=0`, `skipped=0`, `errors=[]`.
+
+A subsequent `POST /collect` with `{"source":"remoteok"}` returned
+`202 {"enqueued":1}`. The live worker completed the job with `attempts=1` and
+no `last_error`. The RemoteOK row count remained 99, confirming deduplication on
+the repeated collection. Separate fictional openings were used only for PDF
+smoke checks.
+
+### Container PDF smoke checks
+
+Using `templates/kb`, `OpenRouterClient` with an `httpx.MockTransport`, and the
+real pipeline/WeasyPrint/PDF reader inside the API container:
+
+| Language | Pages | Selectable text characters | Header present locally | Header in inference |
+| --- | --- | --- | --- | --- |
+| EN | 1 | 684 | Yes | No |
+| PT-BR | 1 | 687 | Yes | No |
+
+The final images reproduced the same results after the PDF permission fix. New
+PDFs were readable with mode `0644` inside the isolated container; the normal
+quickstart makes the host data directory owner-only (`0700`), and replacements
+preserve an existing PDF's explicit permissions.
+
+These checks validate rendering and the application-side inference contract;
+they do not validate a live OpenRouter model's ability to follow that contract.
+The local-header/approved-content decision and its deliberate free-form
+rewriting limitation are recorded in ADR-0001.
+
+### Cleanup
+
+Only acceptance-created containers and volumes are removed with the matching
+isolated project name. Production/default project data is untouched:
+
+```bash
+docker compose --env-file .env.example -p lookout-phase1-acceptance \
+  -f docker-compose.yml -f docker/acceptance/phase1.override.yml down -v
+```
+
+## Historical acceptance baseline
 
 Acceptance passed for the required walkthrough. Steps 1–6 and 8 passed; optional Gmail step 7 was skipped because Gmail credentials are unavailable. After the whole-branch review, the privacy, factual-validation, deduplication, and source-schema safeguards were strengthened and verified. No model-generated code was executed.
 

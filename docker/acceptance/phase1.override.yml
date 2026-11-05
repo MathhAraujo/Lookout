@@ -1,0 +1,18 @@
+services:
+  api:
+    env_file: !override
+      - .env.example
+    volumes: !override []
+    ports: !override
+      - "127.0.0.1::8000"
+    environment:
+      KB_PATH: /app/templates/kb
+      ARTIFACTS_DIR: /app/data/artifacts
+  worker:
+    env_file: !override
+      - .env.example
+    volumes: !override []
+    environment:
+      KB_PATH: /app/templates/kb
+      ARTIFACTS_DIR: /app/data/artifacts
+      WORKER_POLL_SECONDS: "1"

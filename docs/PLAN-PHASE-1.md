@@ -2,6 +2,14 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Current implementation note (2026-11-05):** The checked steps below record the
+original implementation and acceptance. The fixed-header requirement and approved
+fact-selection contract are documented in
+[ADR-0001](adr/0001-local-resume-header-and-approved-content.md). The default stack
+is again Phase 1-only; existing Phase 2 modules/infrastructure are optional.
+See the [current re-acceptance](runbooks/phase-1-acceptance.md) for updated checks
+and credential-dependent steps that have not been rerun with the new contract.
+
 **Goal:** Build the Phase 1 MVP from the PRD: Collector (Tier 0 + Tier 1 + LinkedIn email alerts) + State DB + Resume Tailor prototype (knowledge base → tailored PDF), manually triggered, no frontend (PRD §7).
 
 **Architecture:** Monorepo (S9) with a single Python package `lookout` under `apps/api/` (FastAPI + agent modules) and a thin `apps/worker/` container running the same package's worker entrypoint. PostgreSQL is the state DB (openings + DB-backed `jobs` queue); a dedicated worker process runs APScheduler and executes jobs. Connectors are split into a thin HTTP transport (`fetch`, untested) and pure parsers (`parse_*`, fixture-tested). The tailor pipeline loads the Markdown knowledge base, redacts PII, calls OpenRouter (tailoring slot), validates the output against the KB, and renders Jinja2 HTML → WeasyPrint PDF to a local artifacts dir. All services run locally via Docker Compose; tests execute inside the `api` container (WeasyPrint needs system Pango libraries that are painful on Windows hosts).

@@ -152,6 +152,32 @@ Google SSO or password login by hand; CAPTCHA and 2FA are never automated.
 Dry-run remains enabled by default. Real submission requires both
 `DRY_RUN=false` and `AUTO_SUBMIT_ENABLED=true`.
 
+## Development verification
+
+The full suite also covers the optional Phase 2 browser adapters. Include browser
+binaries in the API image when running that suite; the default MVP images omit
+them to keep startup smaller:
+
+```bash
+docker compose build --build-arg INSTALL_BROWSERS=true api
+docker compose up -d --no-build
+docker compose exec api pytest -q
+docker compose exec api ruff check .
+docker compose exec api ruff format --check apps tests
+```
+
+For an isolated smoke environment with fictional KB files, no host data mounts,
+and a random loopback API port:
+
+```bash
+docker compose --env-file .env.example -p lookout-phase1-acceptance \
+  -f docker-compose.yml -f docker/acceptance/phase1.override.yml up -d --build
+```
+
+The acceptance override creates a separate PostgreSQL volume and uses only the
+committed fictional template. It does not load `.env` credentials or `data/`.
+See the runbook for the exact scope of the latest verification.
+
 ## OpenCode setup
 
 Agent configuration structure:
