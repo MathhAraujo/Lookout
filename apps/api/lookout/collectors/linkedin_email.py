@@ -223,9 +223,20 @@ class LinkedInEmailCollector:
     def fetch(self) -> list[RawOpening]:
         credentials = load_gmail_credentials(self.settings)
         service = build("gmail", "v1", credentials=credentials)
-        query = f"label:{self.settings.gmail_label} from:jobs-noreply@linkedin.com newer_than:7d"
-        response = service.users().messages().list(userId="me", q=query).execute()
-        messages = response.get("messages", [])
+        query = f"label:{self.settings.gmail_label} from:jobs-noreply@linkedin.com"
+        messages = []
+        page_token = None
+        while True:
+            response = (
+                service.users()
+                .messages()
+                .list(userId="me", q=query, pageToken=page_token)
+                .execute()
+            )
+            messages.extend(response.get("messages", []))
+            page_token = response.get("nextPageToken")
+            if not page_token:
+                break
 
         jobs = []
         for message in messages:
