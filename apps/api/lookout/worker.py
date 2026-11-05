@@ -9,7 +9,7 @@ from sqlmodel import Session
 from lookout.collectors.registry import build_collectors, get_collector, load_sources_config
 from lookout.config import Settings, get_settings
 from lookout.db import session_scope
-from lookout.ingest import IngestStats, collect_all, collect_source
+from lookout.ingest import IngestStats, collect_source
 from lookout.llm import OpenRouterClient
 from lookout.models import Job
 from lookout.queue import claim_next, complete, enqueue, fail, reap_stale
@@ -29,8 +29,9 @@ def handle_collect(session: Session, settings: Settings, payload: dict) -> None:
         _raise_collection_errors({source: stats})
         return
 
-    stats = collect_all(session, build_collectors(settings, sources), settings)
-    _raise_collection_errors(stats)
+    # Each source gets its own transaction and retry budget.
+    for collector in build_collectors(settings, sources):
+        enqueue(session, "collect", {"source": collector.name})
 
 
 def _raise_collection_errors(results: dict[str, IngestStats]) -> None:

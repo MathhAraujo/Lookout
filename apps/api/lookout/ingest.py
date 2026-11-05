@@ -1,11 +1,13 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from sqlmodel import Session
+from sqlalchemy import text
+from sqlmodel import Session, select
 
 from lookout.collectors.base import Collector, RawOpening
 from lookout.config import Settings
 from lookout.dedup import is_duplicate
+from lookout.models import Opening
 from lookout.normalize import dedup_key
 from lookout.openings import insert_opening, list_dedup_keys
 
@@ -27,7 +29,12 @@ def ingest(
     title_threshold: float = 90.0,
 ) -> IngestStats:
     stats = IngestStats()
+    # Fetches happen before this transaction lock. Serialize the small local
+    # ingestion workload so cross-source fuzzy decisions see committed inserts.
+    session.execute(text("SELECT pg_advisory_xact_lock(1280266068)"))
     known_keys = list_dedup_keys(session)
+    exact_keys = set(known_keys)
+    known_ids = set(session.exec(select(Opening.source, Opening.external_id)).all())
 
     for raw in raws:
         stats.fetched += 1
@@ -36,11 +43,15 @@ def ingest(
             continue
 
         key = dedup_key(raw.company, raw.title)
-        if key in known_keys or is_duplicate(
-            key,
-            known_keys,
-            company_threshold=company_threshold,
-            title_threshold=title_threshold,
+        if (
+            (raw.external_id is not None and (raw.source, raw.external_id) in known_ids)
+            or key in exact_keys
+            or is_duplicate(
+                key,
+                known_keys,
+                company_threshold=company_threshold,
+                title_threshold=title_threshold,
+            )
         ):
             stats.duplicates += 1
             continue
@@ -50,6 +61,8 @@ def ingest(
         session.add(opening)
         session.flush()
         known_keys.append(key)
+        exact_keys.add(key)
+        known_ids.add((raw.source, raw.external_id))
         stats.inserted += 1
 
     return stats
@@ -59,7 +72,7 @@ def collect_source(session: Session, collector: Collector, settings: Settings) -
     try:
         raws = collector.fetch()
     except Exception as exc:  # noqa: BLE001
-        return IngestStats(errors=[str(exc)])
+        return IngestStats(errors=[f"Collection failed ({type(exc).__name__})"])
 
     return ingest(
         session,
@@ -78,8 +91,11 @@ def collect_all(
 
     for collector in collectors:
         try:
-            results[collector.name] = collect_source(session, collector, settings)
+            with session.begin_nested():
+                results[collector.name] = collect_source(session, collector, settings)
         except Exception as exc:  # noqa: BLE001
-            results[collector.name] = IngestStats(errors=[str(exc)])
+            results[collector.name] = IngestStats(
+                errors=[f"Collection failed ({type(exc).__name__})"]
+            )
 
     return results

@@ -98,6 +98,9 @@ def normalize_company(name: str) -> str:
 
 
 def normalize_title(title: str) -> str:
+    title = re.sub(r"(?i)\bc\+\+(?!\w)", "cplusplus", title)
+    title = re.sub(r"(?i)\bc#(?!\w)", "csharp", title)
+    title = re.sub(r"(?i)(?<!\w)\.net\b", "dotnet", title)
     tokens = normalize_text(title).split()
     return " ".join(token for token in tokens if token not in _REMOTE_TITLE_TOKENS)
 

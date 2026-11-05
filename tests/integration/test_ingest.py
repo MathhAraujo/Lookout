@@ -76,3 +76,68 @@ def test_collect_all_isolates_failing_source(session):
 
     assert isinstance(results["broken"], IngestStats)
     assert results["broken"].errors and results["ok"].inserted == 1
+
+
+def test_external_id_is_idempotent_when_posting_title_changes(session):
+    ingest(session, [make_raw("Globex", "Backend Engineer", external_id="42")])
+    stats = ingest(session, [make_raw("Globex", "QA Analyst", external_id="42")])
+    assert stats.inserted == 0 and stats.duplicates == 1
+
+
+def test_database_failure_rolls_back_only_its_source(session):
+    from lookout.models import Opening
+    from sqlmodel import select
+
+    class Source:
+        def __init__(self, name, raws):
+            self.name, self.raws = name, raws
+
+        def fetch(self):
+            return self.raws
+
+    broken = make_raw("Broken", "Developer", raw={"invalid": {1, 2}})
+    results = collect_all(
+        session,
+        [
+            Source("before", [make_raw("Before", "Developer")]),
+            Source("broken", [make_raw("Partial", "Developer"), broken]),
+            Source("after", [make_raw("After", "Developer")]),
+        ],
+        get_settings(),
+    )
+    session.commit()
+    assert results["before"].inserted == results["after"].inserted == 1
+    assert results["broken"].errors
+    assert {row.company for row in session.exec(select(Opening))} == {"Before", "After"}
+    assert "invalid" not in results["broken"].errors[0]
+
+
+def test_concurrent_cross_source_ingestion_inserts_only_once(session, engine):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from lookout.models import Opening
+    from sqlmodel import Session, select
+
+    first = ingest(session, [make_raw("Globex", "Engineer", source="one")])
+    started = Event()
+
+    def second_ingest():
+        with Session(engine) as other:
+            started.set()
+            stats = ingest(other, [make_raw("Globex", "Engineer", source="two")])
+            other.commit()
+            return stats
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(second_ingest)
+        try:
+            assert started.wait(timeout=5)
+            # The second writer must wait for the first transaction's decision.
+            assert not future.done()
+        finally:
+            session.commit()
+        second = future.result(timeout=5)
+    assert first.inserted == 1
+    assert second.inserted == 0 and second.duplicates == 1
+    assert len(session.exec(select(Opening)).all()) == 1

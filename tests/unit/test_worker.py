@@ -22,3 +22,19 @@ def test_process_next_job_marks_failure(session, settings, monkeypatch):
     session.refresh(job)
 
     assert job.status == "failed" and "collector exploded" in job.last_error
+
+
+def test_collect_all_job_fans_out_to_independent_source_jobs(session, settings, monkeypatch):
+    from types import SimpleNamespace
+
+    from lookout.models import Job
+    from lookout.worker import handle_collect
+    from sqlmodel import select
+
+    monkeypatch.setattr("lookout.worker.load_sources_config", lambda path: {})
+    monkeypatch.setattr(
+        "lookout.worker.build_collectors",
+        lambda settings, sources: [SimpleNamespace(name="one"), SimpleNamespace(name="two")],
+    )
+    handle_collect(session, settings, {})
+    assert {job.payload["source"] for job in session.exec(select(Job))} == {"one", "two"}

@@ -58,8 +58,14 @@ def is_duplicate(
             continue
 
         company_matches = (
-            fuzz.token_set_ratio(candidate_company, existing_company) >= company_threshold
+            fuzz.token_sort_ratio(candidate_company, existing_company) >= company_threshold
         )
+        technologies = {"c", "cplusplus", "csharp", "dotnet"}
+        if (
+            set(candidate_title.split()) & technologies
+            != set(existing_title.split()) & technologies
+        ):
+            continue
         if _title_level_markers(candidate_title) != _title_level_markers(existing_title):
             continue
 

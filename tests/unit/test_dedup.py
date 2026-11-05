@@ -20,3 +20,18 @@ def test_is_duplicate_keeps_grade_suffixed_roles_at_same_company():
     existing = [dedup_key("Acme", "Backend Engineer")]
 
     assert not is_duplicate(dedup_key("Acme", "Backend Engineer II"), existing)
+
+
+def test_dedup_preserves_technology_distinctions():
+    for first, second in [("C++", "C#"), ("C", "C++"), (".NET", "C#")]:
+        assert not is_duplicate(
+            dedup_key("Acme", f"Software Engineer {first}"),
+            [dedup_key("Acme", f"Software Engineer {second}")],
+        )
+
+
+def test_company_subsets_are_not_automatically_equivalent():
+    assert not is_duplicate(
+        dedup_key("Acme Labs", "Backend Engineer"),
+        [dedup_key("Acme", "Backend Engineer")],
+    )
