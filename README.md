@@ -39,6 +39,24 @@ The API also supports `POST /collect` to enqueue all enabled sources or one
 named source, `GET /openings` to list results, and
 `POST /openings/{opening_id}/tailor` to enqueue resume generation.
 
+## LinkedIn alerts via Gmail (optional)
+
+Place your Gmail desktop OAuth client file at `data/gmail_credentials.json`, then run:
+
+```bash
+docker compose exec api python -u -m lookout.cli gmail-auth
+```
+
+Open the printed authorization URL in your host browser. The callback uses
+`http://localhost:8765/`, published only on loopback; set `GMAIL_AUTH_PORT` before
+starting Compose if that port is occupied. The container does not need a browser.
+OAuth requests Gmail read-only scope. The saved token file has owner-only access.
+
+Label the relevant LinkedIn alert emails with `lookout/jobs`, enable
+`linkedin_email` in `config/sources.yml`, and collect them. All pages of labeled
+alerts are read, including older alerts after an outage; ingestion deduplicates
+previously collected jobs. No LinkedIn scraping or submission is performed.
+
 ## Base resume and fixed personal header
 
 The base resume is structured Markdown under `data/kb`, not a PDF sent to an LLM.

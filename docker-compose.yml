@@ -41,6 +41,7 @@ services:
       - ./data:/app/data
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
+      - "127.0.0.1:${GMAIL_AUTH_PORT:-8765}:${GMAIL_AUTH_PORT:-8765}"
     depends_on:
       postgres:
         condition: service_healthy

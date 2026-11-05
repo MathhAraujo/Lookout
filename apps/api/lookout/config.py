@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     gmail_credentials_file: Path = Path("data/gmail_credentials.json")
     gmail_token_file: Path = Path("data/gmail_token.json")
     gmail_label: str = "lookout/jobs"
+    gmail_auth_port: int = Field(default=8765, ge=1, le=65535)
     kb_path: Path = Path("data/kb")
     artifacts_dir: Path = Path("data/artifacts")
     sources_config: Path = Path("config/sources.yml")

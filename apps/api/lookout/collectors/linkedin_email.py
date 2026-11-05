@@ -170,8 +170,7 @@ def load_gmail_credentials(settings: Settings) -> Credentials:
             raise CollectorError(
                 "Unable to refresh Gmail credentials; run `python -m lookout.cli gmail-auth`"
             ) from exc
-        token_path.parent.mkdir(parents=True, exist_ok=True)
-        token_path.write_text(credentials.to_json(), encoding="utf-8")
+        _save_gmail_token(token_path, credentials.to_json())
 
     return credentials
 
@@ -183,9 +182,21 @@ def run_gmail_auth(settings: Settings) -> None:
     flow = InstalledAppFlow.from_client_secrets_file(
         str(settings.gmail_credentials_file), scopes=[_GMAIL_READONLY_SCOPE]
     )
-    credentials = flow.run_local_server(port=0)
-    settings.gmail_token_file.parent.mkdir(parents=True, exist_ok=True)
-    settings.gmail_token_file.write_text(credentials.to_json(), encoding="utf-8")
+    credentials = flow.run_local_server(
+        host="localhost",
+        bind_addr="0.0.0.0",
+        port=settings.gmail_auth_port,
+        open_browser=False,
+        timeout_seconds=300,
+    )
+    _save_gmail_token(settings.gmail_token_file, credentials.to_json())
+
+
+def _save_gmail_token(path, token_json: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(mode=0o600, exist_ok=True)
+    path.chmod(0o600)
+    path.write_text(token_json, encoding="utf-8")
 
 
 def _decode_header(value: str) -> str:

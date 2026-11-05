@@ -50,3 +50,35 @@ def test_gmail_fetch_reads_all_pages_without_a_seven_day_cutoff(monkeypatch):
     assert len(calls) == 2 and calls[1].kwargs["pageToken"] == "page-two"
     assert "newer_than" not in calls[0].kwargs["q"]
     assert messages.get.call_count == 2
+
+
+def test_gmail_auth_uses_a_host_reachable_callback_and_private_token(tmp_path, monkeypatch):
+    from unittest.mock import MagicMock
+
+    from lookout.collectors.linkedin_email import run_gmail_auth
+    from lookout.config import Settings
+
+    credentials_file = tmp_path / "client.json"
+    credentials_file.write_text("{}")
+    settings = Settings(
+        gmail_credentials_file=credentials_file,
+        gmail_token_file=tmp_path / "token.json",
+        gmail_auth_port=18765,
+    )
+    flow = MagicMock()
+    flow.run_local_server.return_value.to_json.return_value = '{"token": "fictional"}'
+    factory = MagicMock(return_value=flow)
+    monkeypatch.setattr(
+        "lookout.collectors.linkedin_email.InstalledAppFlow.from_client_secrets_file", factory
+    )
+    run_gmail_auth(settings)
+    assert factory.call_args.kwargs["scopes"] == ["https://www.googleapis.com/auth/gmail.readonly"]
+    assert flow.run_local_server.call_args.kwargs == {
+        "host": "localhost",
+        "bind_addr": "0.0.0.0",
+        "port": 18765,
+        "open_browser": False,
+        "timeout_seconds": 300,
+    }
+    assert settings.gmail_token_file.stat().st_mode & 0o777 == 0o600
+    assert settings.gmail_token_file.read_text() == '{"token": "fictional"}'
