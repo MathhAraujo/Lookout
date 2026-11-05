@@ -14,81 +14,6 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    build:
-      context: .
-      dockerfile: docker/minio/Dockerfile
-      args:
-        MINIO_VERSION: RELEASE.2025-10-15T17-29-55Z
-        MINIO_COMMIT: 9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
-        MINIO_SHORT_COMMIT: 9e49d5e7a648
-    image: lookout-minio:RELEASE.2025-10-15T17-29-55Z
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
-      MINIO_UPDATE: "off"
-    volumes:
-      - miniodata:/data
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  minio-init:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-    command: ["python", "-m", "lookout.minio_init"]
-    environment:
-      MINIO_ENDPOINT_URL: ${MINIO_ENDPOINT_URL:-http://minio:9000}
-      MINIO_BUCKET: ${MINIO_BUCKET:-lookout-artifacts}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
-    depends_on:
-      minio:
-        condition: service_healthy
-    restart: "no"
-
-  infisical-redis:
-    image: redis:7.4-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - infisical_redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-
-  infisical:
-    image: infisical/infisical:v0.166.3
-    environment:
-      NODE_ENV: production
-      SITE_URL: ${INFISICAL_SITE_URL:-http://localhost:8081}
-      DB_CONNECTION_URI: postgresql://${POSTGRES_USER:-lookout}:${POSTGRES_PASSWORD:-lookout}@postgres:5432/infisical
-      REDIS_URL: redis://infisical-redis:6379
-      ENCRYPTION_KEY: ${INFISICAL_ENCRYPTION_KEY:?Generate INFISICAL_ENCRYPTION_KEY in .env}
-      AUTH_SECRET: ${INFISICAL_AUTH_SECRET:?Generate INFISICAL_AUTH_SECRET in .env}
-    ports:
-      - "127.0.0.1:8081:8080"
-    volumes:
-      - infisical_data:/app/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-      infisical-redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/status"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    restart: unless-stopped
-
   api:
     build:
       context: .
@@ -119,8 +44,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
     healthcheck:
       test:
         - CMD
@@ -159,11 +82,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
 
 volumes:
   pgdata:
-  miniodata:
-  infisical_data:
-  infisical_redis_data:

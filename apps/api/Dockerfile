@@ -15,7 +15,15 @@ COPY apps/api/lookout ./apps/api/lookout
 
 RUN pip install --no-cache-dir -e ".[dev]"
 
-RUN python -m playwright install --with-deps chromium \
+ARG INSTALL_BROWSERS=false
+RUN if [ "$INSTALL_BROWSERS" = "true" ]; then \
+        python -m playwright install --with-deps chromium; \
+    fi \
     && rm -rf /var/lib/apt/lists/*
+
+COPY alembic.ini .
+COPY alembic ./alembic
+COPY config ./config
+COPY templates ./templates
 
 CMD ["sh", "-c", "alembic upgrade head && uvicorn lookout.api:create_app --factory --host 0.0.0.0 --port 8000"]

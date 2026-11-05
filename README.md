@@ -41,6 +41,8 @@ named source, `GET /openings` to list results, and
 
 ## Phase 2 local services and credentials
 
+The default `docker-compose.yml` starts only PostgreSQL, API, and worker.
+Optional Phase 2 services are defined in `docker-compose.phase2.yml`.
 Before starting the full stack, set unique local values for `MINIO_ACCESS_KEY`
 and `MINIO_SECRET_KEY` in `.env`. Generate the Infisical server keys locally and
 copy the output into the same ignored file; do not commit or paste these values
@@ -49,6 +51,12 @@ into source files:
 ```bash
 python -c "import secrets; print('MINIO_ACCESS_KEY=' + secrets.token_hex(16)); print('MINIO_SECRET_KEY=' + secrets.token_urlsafe(32))"
 python -c "import secrets; print('INFISICAL_ENCRYPTION_KEY=' + secrets.token_hex(16)); print('INFISICAL_AUTH_SECRET=' + secrets.token_urlsafe(32))"
+```
+
+Start the optional stack after configuring its secrets:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.phase2.yml up -d --build
 ```
 
 The Infisical web interface is available at `http://localhost:8081`; the API
