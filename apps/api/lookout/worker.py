@@ -43,17 +43,17 @@ def _raise_collection_errors(results: dict[str, IngestStats]) -> None:
 
 def handle_tailor(session: Session, settings: Settings, payload: dict) -> None:
     opening_id = uuid.UUID(str(payload["opening_id"]))
-    llm = OpenRouterClient(
+    with OpenRouterClient(
         api_key=settings.openrouter_api_key,
         model=settings.openrouter_tailoring_model,
-    )
-    tailor_resume(
-        session,
-        opening_id=opening_id,
-        kb_path=settings.kb_path,
-        out_dir=settings.artifacts_dir,
-        llm=llm,
-    )
+    ) as llm:
+        tailor_resume(
+            session,
+            opening_id=opening_id,
+            kb_path=settings.kb_path,
+            out_dir=settings.artifacts_dir,
+            llm=llm,
+        )
 
 
 JobHandler = Callable[[Session, Settings, dict], None]
@@ -90,6 +90,7 @@ def process_next_job(session: Session, settings: Settings) -> bool:
         if failed_job is not None:
             fail(session, failed_job, f"Job failed ({type(exc).__name__})")
             session.commit()
+        logger.warning("Job %s failed (%s)", job_id, type(exc).__name__)
         return True
     finally:
         stop_heartbeat.set()
@@ -99,8 +100,10 @@ def process_next_job(session: Session, settings: Settings) -> bool:
     if completed_job is not None:
         complete(session, completed_job)
         session.commit()
+        logger.info("Job %s completed", job_id)
     else:
         session.rollback()
+        logger.warning("Discarded obsolete job attempt for %s", job_id)
     return True
 
 

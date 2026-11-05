@@ -79,16 +79,19 @@ def main() -> None:
         _collect(settings, args.source, args.enqueue)
     elif args.command == "tailor":
         opening_id = UUID(args.opening_id)
-        with session_scope(settings) as session:
+        with (
+            OpenRouterClient(
+                api_key=settings.openrouter_api_key,
+                model=settings.openrouter_tailoring_model,
+            ) as llm,
+            session_scope(settings) as session,
+        ):
             pdf_path = tailor_resume(
                 session,
                 opening_id=opening_id,
                 kb_path=settings.kb_path,
                 out_dir=settings.artifacts_dir,
-                llm=OpenRouterClient(
-                    api_key=settings.openrouter_api_key,
-                    model=settings.openrouter_tailoring_model,
-                ),
+                llm=llm,
             )
         print(pdf_path)
     elif args.command == "gmail-auth":

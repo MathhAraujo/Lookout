@@ -22,3 +22,16 @@ def test_complete_json_raises_on_http_error():
 
     with pytest.raises(LLMError):
         llm.complete_json(system="s", user="u")
+
+
+def test_context_manager_closes_only_owned_http_clients():
+    import httpx
+    from lookout.llm import OpenRouterClient
+
+    with OpenRouterClient(api_key="fictional", model="fictional") as owned:
+        assert not owned.client.is_closed
+    assert owned.client.is_closed
+    with httpx.Client() as injected:
+        with OpenRouterClient(api_key="fictional", model="fictional", client=injected):
+            pass
+        assert not injected.is_closed

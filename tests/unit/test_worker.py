@@ -38,3 +38,20 @@ def test_collect_all_job_fans_out_to_independent_source_jobs(session, settings, 
     )
     handle_collect(session, settings, {})
     assert {job.payload["source"] for job in session.exec(select(Job))} == {"one", "two"}
+
+
+def test_worker_surfaces_failure_without_logging_exception_payload(
+    session,
+    settings,
+    monkeypatch,
+    caplog,
+):
+    enqueue(session, "collect", {}, max_attempts=1)
+
+    def fail_with_private_payload(*args):
+        raise RuntimeError("fictional-private-payload")
+
+    monkeypatch.setitem(JOB_HANDLERS, "collect", fail_with_private_payload)
+    assert process_next_job(session, settings)
+    assert "failed (RuntimeError)" in caplog.text
+    assert "fictional-private-payload" not in caplog.text

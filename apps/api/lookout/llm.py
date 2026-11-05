@@ -19,7 +19,15 @@ class OpenRouterClient:
         self.api_key = api_key
         self.model = model
         self.base_url = base_url.rstrip("/")
+        self._owns_client = client is None
         self.client = client or httpx.Client(timeout=30.0)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        if self._owns_client:
+            self.client.close()
 
     def complete_json(self, *, system: str, user: str) -> dict:
         try:

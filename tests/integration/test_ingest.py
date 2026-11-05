@@ -113,7 +113,7 @@ def test_database_failure_rolls_back_only_its_source(session):
 
 
 def test_concurrent_cross_source_ingestion_inserts_only_once(session, engine):
-    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError
     from threading import Event
 
     from lookout.models import Opening
@@ -134,7 +134,12 @@ def test_concurrent_cross_source_ingestion_inserts_only_once(session, engine):
         try:
             assert started.wait(timeout=5)
             # The second writer must wait for the first transaction's decision.
-            assert not future.done()
+            try:
+                future.result(timeout=0.25)
+            except TimeoutError:
+                pass
+            else:
+                raise AssertionError("Concurrent writer did not wait for the ingestion lock")
         finally:
             session.commit()
         second = future.result(timeout=5)
