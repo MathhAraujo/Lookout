@@ -4,7 +4,6 @@ from uuid import UUID
 from sqlmodel import Session, select
 
 from lookout.applications import (
-    get_application,
     record_application_event,
     transition_application,
     upsert_application,
@@ -86,7 +85,12 @@ def persist_decision(
 
 
 def _get_waiting_review(session: Session, application_id: UUID) -> Application:
-    application = get_application(session, application_id)
+    application = session.exec(
+        select(Application)
+        .where(Application.id == application_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).first()
     if application is None:
         raise ReviewApplicationNotFoundError("application not found")
     if application.lane != "review" or application.status != "awaiting_review":
@@ -94,8 +98,12 @@ def _get_waiting_review(session: Session, application_id: UUID) -> Application:
     return application
 
 
-def approve_review(session: Session, application_id: UUID) -> Application:
+def approve_review(
+    session: Session, application_id: UUID, *, now: datetime | None = None
+) -> Application:
     application = _get_waiting_review(session, application_id)
+    if application.review_expires_at is None or application.review_expires_at <= (now or utcnow()):
+        raise InvalidReviewTransition("review has expired")
     try:
         return transition_application(
             session,
@@ -126,10 +134,14 @@ def decline_review(session: Session, application_id: UUID) -> Application:
 
 def expire_reviews(session: Session, *, now: datetime | None = None) -> int:
     expiration_time = now or utcnow()
-    statement = select(Application).where(
-        Application.lane == "review",
-        Application.status == "awaiting_review",
-        Application.review_expires_at <= expiration_time,
+    statement = (
+        select(Application)
+        .where(
+            Application.lane == "review",
+            Application.status == "awaiting_review",
+            Application.review_expires_at <= expiration_time,
+        )
+        .with_for_update(skip_locked=True)
     )
     applications = list(session.exec(statement).all())
 

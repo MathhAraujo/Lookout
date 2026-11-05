@@ -84,7 +84,7 @@ def test_approve_review_moves_only_waiting_review_to_ready(session, opening_fixt
     )
     session.commit()
 
-    approved = approve_review(session, review.id)
+    approved = approve_review(session, review.id, now=datetime(2026, 10, 21, tzinfo=UTC))
 
     assert approved.lane == "auto_apply"
     assert approved.status == "ready"
@@ -179,3 +179,15 @@ def test_matching_rerun_does_not_reset_submitted_application(session, opening_fi
     assert (
         session.exec(select(ApplicationEvent)).all()[-1].event_type == "matching_decision_ignored"
     )
+
+
+@pytest.mark.parametrize("offset", [timedelta(0), timedelta(seconds=1)])
+def test_approval_rejects_expired_review_before_the_sweeper_runs(session, opening_fixture, offset):
+    created = datetime(2026, 10, 1, tzinfo=UTC)
+    review = persist_decision(session, opening_fixture, make_decision("review"), now=created)
+    with pytest.raises(InvalidReviewTransition, match="expired"):
+        approve_review(session, review.id, now=created + timedelta(days=7) + offset)
+    assert review.status == "awaiting_review"
+    assert not session.exec(
+        select(ApplicationEvent).where(ApplicationEvent.event_type == "review_approved")
+    ).all()
