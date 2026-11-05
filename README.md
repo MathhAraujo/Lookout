@@ -14,6 +14,7 @@ and worker:
 ```bash
 cp .env.example .env
 mkdir -p data
+chmod 700 data
 cp -r templates/kb data/kb
 ```
 
