@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from _helpers import base_url, greenhouse_answers, make_application, make_opening
 from lookout.appliers import ApplicationForm, ApplierError, ApplyResult, GreenhouseApplier
 from lookout.browser_sessions import BrowserSessionError, BrowserSessionInUseError
@@ -271,3 +272,56 @@ def test_dry_run_with_missing_resume_still_refuses(local_site, tmp_path):
 
     assert result.status == "manual_assist"
     assert result.detail == "resume_artifact_missing"
+
+
+@pytest.mark.parametrize(
+    "fixture", ["greenhouse_required_control.html", "greenhouse_required_checkbox.html"]
+)
+def test_required_unsupported_control_blocks_inspection_and_submission(
+    local_site, resume_pdf, tmp_path, fixture
+):
+    applier = GreenhouseApplier(_sessions(tmp_path))
+    opening = make_opening(f"{base_url(local_site)}/{fixture}")
+    with pytest.raises(ApplierError, match="unsupported_required_control"):
+        applier.inspect(opening, resume_path=resume_pdf)
+    result = applier.submit(
+        make_application(),
+        opening,
+        resume_path=resume_pdf,
+        answers=greenhouse_answers(),
+        dry_run=False,
+        auto_submit_enabled=True,
+    )
+    assert result.status == "manual_assist"
+    assert local_site.recorder.submission_posts == 0
+
+
+def test_select_uses_visible_approved_label_when_option_values_differ(
+    local_site, resume_pdf, tmp_path
+):
+    applier = GreenhouseApplier(_sessions(tmp_path))
+    opening = make_opening(f"{base_url(local_site)}/greenhouse_select_values.html")
+    result = applier.submit(
+        make_application(),
+        opening,
+        resume_path=resume_pdf,
+        answers=greenhouse_answers(),
+        dry_run=False,
+        auto_submit_enabled=True,
+    )
+    assert result.status == "submitted"
+    assert local_site.recorder.submission_posts == 1
+
+
+def test_browser_launch_failure_during_context_entry_is_sanitized(resume_pdf):
+    from contextlib import contextmanager
+
+    class Sessions:
+        @contextmanager
+        def open(self, *args, **kwargs):
+            raise BrowserSessionError("fictional-private-payload")
+            yield
+
+    applier = GreenhouseApplier(Sessions())
+    with pytest.raises(ApplierError, match="browser_session_unavailable"):
+        applier.inspect(make_opening("https://example.com/job"), resume_path=resume_pdf)

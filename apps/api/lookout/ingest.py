@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from uuid import UUID
 
 from sqlalchemy import text
 from sqlmodel import Session, select
@@ -19,6 +20,7 @@ class IngestStats:
     duplicates: int = 0
     skipped: int = 0
     errors: list[str] = field(default_factory=list)
+    inserted_ids: list[UUID] = field(default_factory=list)
 
 
 def ingest(
@@ -64,6 +66,7 @@ def ingest(
         exact_keys.add(key)
         known_ids.add((raw.source, raw.external_id))
         stats.inserted += 1
+        stats.inserted_ids.append(opening.id)
 
     return stats
 
@@ -74,12 +77,17 @@ def collect_source(session: Session, collector: Collector, settings: Settings) -
     except Exception as exc:  # noqa: BLE001
         return IngestStats(errors=[f"Collection failed ({type(exc).__name__})"])
 
-    return ingest(
+    stats = ingest(
         session,
         raws,
         company_threshold=settings.dedup_company_threshold,
         title_threshold=settings.dedup_title_threshold,
     )
+    if settings.workflow_enabled:
+        from lookout.workflow import enqueue_matches
+
+        enqueue_matches(session, stats.inserted_ids)
+    return stats
 
 
 def collect_all(

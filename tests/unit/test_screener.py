@@ -62,6 +62,13 @@ def test_unknown_question_label_is_not_classified():
     assert classify_question(question) is None
 
 
+def test_years_of_technology_experience_uses_approved_numeric_fact():
+    question = FormQuestion(
+        key="years_of_python_experience", label="Years of Python experience", required=True
+    )
+    assert classify_question(question) == "experience_years"
+
+
 def test_question_classification_is_case_insensitive():
     question = FormQuestion(
         key="salary",

@@ -10,6 +10,22 @@
 
 **Spec:** `docs/PRD.md` §§4–7 and §11; build on the Phase 1 baseline in `docs/PLAN-PHASE-1.md` and its accepted behavior in `docs/runbooks/phase-1-acceptance.md`.
 
+## Delivery status — 2026-11-09
+
+- Tasks 1–7: existing implementations and regression tests verified; original
+  failing-test checkpoints were not replayed after their modules already existed.
+- Task 8: implemented and verified with 332 passing tests, Ruff lint/format,
+  a wheel build, and 33 workflow/operational tests against real PostgreSQL/MinIO.
+- Task 9: final container acceptance and its runbook are in progress.
+- Live fictional OpenRouter acceptance passed for EN/PT-BR fact-selection PDFs
+  and structured scoring with the selected free model.
+- `WORKFLOW_ENABLED` defaults to false to preserve standalone Phase 1 startup;
+  the Phase 2 Compose overlay enables collection-to-matching orchestration.
+
+The completed checkboxes below summarize delivered code and verification, including
+historical implementation milestones; they do not claim those old red-test runs
+were repeated during this execution.
+
 ## Global Constraints
 
 - Python ≥ 3.11; containers use Python 3.12.
@@ -72,11 +88,11 @@
   - `transition_application(session, application, *, lane, status, event_type, details=None) -> Application`; reject invalid transitions and append one event atomically.
   - `get_application(session, application_id) -> Application | None` and `list_applications(session, *, lane=None, status=None, limit=100, offset=0) -> list[Application]`.
 
-- [ ] **Step 1: Write failing repository tests** for one application per opening, JSON decision fields, explicit `application_email` persistence, atomic status/event updates, invalid transition rejection, answer/artifact/health foreign-key relationships, and absence of answer-text columns from the database model.
-- [ ] **Step 2: Run `pytest tests/integration/test_applications.py -v`** and verify it fails because the Phase 2 models/repository do not exist.
-- [ ] **Step 3: Implement the SQLModel tables, migration `0003_phase_2_workflow`, and repository functions** with PostgreSQL JSONB and timezone-aware timestamps.
-- [ ] **Step 4: Run `pytest tests/integration/test_applications.py -v`** and verify all tests pass, including a duplicate `opening_id` constraint test.
-- [ ] **Step 5: Run the full suite, Ruff lint, and the required formatter check; commit** as `feat: add application workflow persistence`.
+- [x] **Step 1: Write failing repository tests** for one application per opening, JSON decision fields, explicit `application_email` persistence, atomic status/event updates, invalid transition rejection, answer/artifact/health foreign-key relationships, and absence of answer-text columns from the database model.
+- [x] **Step 2: Run `pytest tests/integration/test_applications.py -v`** and verify it fails because the Phase 2 models/repository do not exist.
+- [x] **Step 3: Implement the SQLModel tables, migration `0003_phase_2_workflow`, and repository functions** with PostgreSQL JSONB and timezone-aware timestamps.
+- [x] **Step 4: Run `pytest tests/integration/test_applications.py -v`** and verify all tests pass, including a duplicate `opening_id` constraint test.
+- [x] **Step 5: Run the full suite, Ruff lint, and the required formatter check; commit** as `feat: add application workflow persistence`.
 
 ### Task 2: MinIO artifact storage
 
@@ -93,11 +109,11 @@
   - Generate opaque object keys as `applications/{application_id}/{artifact_id}/{kind}`; never include company, title, email, or other personal data in the key.
   - Settings for MinIO endpoint, bucket (`lookout-artifacts`), access key, and secret key. Configure an internal-only Compose service, persistent volume, health check, and idempotent bucket initialization; do not expose the MinIO console by default.
 
-- [ ] **Step 1: Write failing tests** using a stubbed S3 client for binary upload/download, missing-object errors, and delete behavior; assert object keys contain no PII.
-- [ ] **Step 2: Run `pytest tests/unit/test_artifacts.py -v`** and verify it fails because the artifact store is absent.
-- [ ] **Step 3: Implement `ArtifactStore` and `S3ArtifactStore`**, then add Boto3 and MinIO Compose configuration. Store tailored PDFs, approved answers, and short per-opening records as separate objects; keep only object metadata in PostgreSQL.
-- [ ] **Step 4: Run the unit test and a MinIO round-trip smoke test** (`put_file` → `get_bytes` → compare exact bytes); verify a restarted MinIO container retains the object.
-- [ ] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: store application artifacts in minio`.
+- [x] **Step 1: Write failing tests** using a stubbed S3 client for binary upload/download, missing-object errors, and delete behavior; assert object keys contain no PII.
+- [x] **Step 2: Run `pytest tests/unit/test_artifacts.py -v`** and verify it fails because the artifact store is absent.
+- [x] **Step 3: Implement `ArtifactStore` and `S3ArtifactStore`**, then add Boto3 and MinIO Compose configuration. Store tailored PDFs, approved answers, and short per-opening records as separate objects; keep only object metadata in PostgreSQL.
+- [x] **Step 4: Run the unit test and a MinIO round-trip smoke test** (`put_file` → `get_bytes` → compare exact bytes); verify a restarted MinIO container retains the object.
+- [x] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: store application artifacts in minio`.
 
 ### Task 3: Match profile, deterministic filter, and LLM scoring
 
@@ -120,11 +136,11 @@
   - `evaluate_opening(opening, profile, policy, *, llm, pii) -> MatchDecision`: deterministic rejects make no LLM call; otherwise request JSON `{score: 0..100, reasons: string[], red_flags: string[]}` using the OpenRouter scoring model. Redact the full prompt and assert no PII remains before calling the LLM.
   - Lane assignment: below 70 or deterministic reject → `rejected`; score ≥90 on Greenhouse/Lever or an opening with an explicit application email → `auto_apply`; score 70–89 on those targets → `review`; score ≥70 on every other target → `manual_assist`. LinkedIn alert openings are never treated as automatable.
 
-- [ ] **Step 1: Write failing tests** for each deterministic rule, seniority regex and level ordering, missing salary, currency mismatch, invalid policy order, no LLM call on rejection, score-band routing, malformed/out-of-range JSON, and PII redaction in the complete scoring prompt.
-- [ ] **Step 2: Run `pytest tests/unit/test_matching.py -v`** and verify it fails because the profile and matcher modules do not exist.
-- [ ] **Step 3: Implement the profile loader, policy validation, deterministic filter, scoring prompt/schema validation, and lane classifier**; use the existing OpenRouter JSON client rather than introducing a second client.
-- [ ] **Step 4: Run `pytest tests/unit/test_matching.py -v`** and verify all cases pass with fake LLM responses and fictional profile data.
-- [ ] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add deterministic and llm job matching`.
+- [x] **Step 1: Write failing tests** for each deterministic rule, seniority regex and level ordering, missing salary, currency mismatch, invalid policy order, no LLM call on rejection, score-band routing, malformed/out-of-range JSON, and PII redaction in the complete scoring prompt.
+- [x] **Step 2: Run `pytest tests/unit/test_matching.py -v`** and verify it fails because the profile and matcher modules do not exist.
+- [x] **Step 3: Implement the profile loader, policy validation, deterministic filter, scoring prompt/schema validation, and lane classifier**; use the existing OpenRouter JSON client rather than introducing a second client.
+- [x] **Step 4: Run `pytest tests/unit/test_matching.py -v`** and verify all cases pass with fake LLM responses and fictional profile data.
+- [x] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add deterministic and llm job matching`.
 
 ### Task 4: Persist lanes, review decisions, and expiry
 
@@ -142,11 +158,11 @@
   - `expire_reviews(session, *, now=None) -> int`: review items at or past the seven-day TTL transition to `manual_assist/expired`; preserve the source URL through the related `Opening`.
   - A submitted decision cannot be reset, re-enqueued for application, or re-applied by rerunning matching.
 
-- [ ] **Step 1: Write failing tests** for every lane's initial status, seven-day expiry boundary, approve/decline behavior, attempts to approve a non-review item, and rerunning a submitted opening.
-- [ ] **Step 2: Run the two routing test files** and verify they fail because the routing transitions are absent.
-- [ ] **Step 3: Implement `routing.py` and the allowed transition rules** using the transactional repository from Task 1; record sanitized events for every decision and review action.
-- [ ] **Step 4: Run the routing unit and PostgreSQL integration tests** and verify all transitions and the TTL boundary pass.
-- [ ] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add review and application lane routing`.
+- [x] **Step 1: Write failing tests** for every lane's initial status, seven-day expiry boundary, approve/decline behavior, attempts to approve a non-review item, and rerunning a submitted opening.
+- [x] **Step 2: Run the two routing test files** and verify they fail because the routing transitions are absent.
+- [x] **Step 3: Implement `routing.py` and the allowed transition rules** using the transactional repository from Task 1; record sanitized events for every decision and review action.
+- [x] **Step 4: Run the routing unit and PostgreSQL integration tests** and verify all transitions and the TTL boundary pass.
+- [x] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add review and application lane routing`.
 
 ### Task 5: Approved facts table and screener
 
@@ -164,11 +180,11 @@
   - `resolve_question(question, facts, kb, *, llm, pii) -> ResolvedAnswer`: factual classes (`work_authorization`, `sponsorship`, `salary`, `start_date`, `relocation`, `location`, `experience_years`) use exact approved facts only. The only inferable classes are `motivation` and `relevant_experience`, grounded in KB facts and redacted before the LLM call. Any disqualifying question requires an exact approved fact and is never inferred. Unknown required or missing disqualifying facts return `blocked`; optional unknown questions remain unanswered.
   - `screen_questions(session, application, questions, *, facts, kb, llm, pii) -> list[ResolvedAnswer]`; persist only question/source/status metadata in PostgreSQL and return answer text in memory for the worker to write to MinIO. Return blockers without submitting anything.
 
-- [ ] **Step 1: Write failing tests** for label classification (`Are you legally authorized to work?` → `work_authorization`; `Will you require visa sponsorship?` → `sponsorship`; `What are your salary expectations?` → `salary`; `When can you start?` → `start_date`; `Are you willing to relocate?` → `relocation`; `Where are you located?` → `location`; `How many years of Python experience?` → `experience_years`; `Why are you interested in this role?` → `motivation`; `Describe your relevant experience` → `relevant_experience`), exact fact mapping, allowed-value validation, missing/disqualifying facts, unknown required versus optional questions, and PII-free inference prompts.
-- [ ] **Step 2: Run `pytest tests/unit/test_screener.py -v`** and verify it fails because the facts and screener modules do not exist.
-- [ ] **Step 3: Implement the local facts loader and enumerated question policy**; do not add free-form inference for factual or disqualifying questions.
-- [ ] **Step 4: Run `pytest tests/unit/test_screener.py -v`** and verify all cases pass with fictional facts and fake LLM responses.
-- [ ] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add facts-gated application screening`.
+- [x] **Step 1: Write failing tests** for label classification (`Are you legally authorized to work?` → `work_authorization`; `Will you require visa sponsorship?` → `sponsorship`; `What are your salary expectations?` → `salary`; `When can you start?` → `start_date`; `Are you willing to relocate?` → `relocation`; `Where are you located?` → `location`; `How many years of Python experience?` → `experience_years`; `Why are you interested in this role?` → `motivation`; `Describe your relevant experience` → `relevant_experience`), exact fact mapping, allowed-value validation, missing/disqualifying facts, unknown required versus optional questions, and PII-free inference prompts.
+- [x] **Step 2: Run `pytest tests/unit/test_screener.py -v`** and verify it fails because the facts and screener modules do not exist.
+- [x] **Step 3: Implement the local facts loader and enumerated question policy**; do not add free-form inference for factual or disqualifying questions.
+- [x] **Step 4: Run `pytest tests/unit/test_screener.py -v`** and verify all cases pass with fictional facts and fake LLM responses.
+- [x] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add facts-gated application screening`.
 
 ### Task 6: Infisical secrets, persistent sessions, and connector health
 
@@ -193,11 +209,11 @@
   - `check_connector_health(platform: Literal["greenhouse", "lever", "email"], *, settings: Settings, secrets: SecretProvider, sessions: BrowserSessionManager) -> ConnectorHealthSnapshot`; `save_connector_health(session, snapshot, *, now=None) -> ConnectorHealth` upserts the per-connector record. A daily worker check records a sanitized reason. Expose machine-readable health for Phase 3 UI alerts.
   - Bind the host API and Infisical ports to `127.0.0.1` by default. Document local generation of non-default Infisical encryption/auth secrets. Users must manually bootstrap browser SSO/password sessions; CAPTCHA/2FA is not bypassed.
 
-- [ ] **Step 1: Write failing tests** for Infisical secret retrieval/error sanitization, persistent per-platform profile selection, rejection of simultaneous use of one profile, context cleanup, and daily health result persistence without secret values.
-- [ ] **Step 2: Run the three unit test files** and verify they fail because the secret/session/health modules are absent.
-- [ ] **Step 3: Implement the secret provider, Compose services, persistent browser-session manager, and daily health checks**; pin Infisical to a specific release tag and keep the Lookout queue PostgreSQL-backed.
-- [ ] **Step 4: Run the unit tests and a Compose health smoke test** with fake secrets; verify the Infisical, API, worker, and PostgreSQL services become healthy and no secret appears in logs.
-- [ ] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add connector secrets and session health`.
+- [x] **Step 1: Write failing tests** for Infisical secret retrieval/error sanitization, persistent per-platform profile selection, rejection of simultaneous use of one profile, context cleanup, and daily health result persistence without secret values.
+- [x] **Step 2: Run the three unit test files** and verify they fail because the secret/session/health modules are absent.
+- [x] **Step 3: Implement the secret provider, Compose services, persistent browser-session manager, and daily health checks**; pin Infisical to a specific release tag and keep the Lookout queue PostgreSQL-backed.
+- [x] **Step 4: Run the unit tests and a Compose health smoke test** with fake secrets; verify the Infisical, API, worker, and PostgreSQL services become healthy and no secret appears in logs.
+- [x] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add connector secrets and session health`.
 
 ### Task 7: Greenhouse, Lever, and explicit email appliers
 
@@ -215,11 +231,11 @@
   - Both browser adapters inspect and fill supported fields in dry-run but never click the final submit control. Unsupported required controls, missing explicit email target, expired login, CAPTCHA, or 2FA return `manual_assist` with a sanitized reason.
   - A real submit requires `dry_run=False`, `AUTO_SUBMIT_ENABLED=true`, lane `auto_apply`, and status `submitting` committed before the external side effect. Once status is `submitting`, an ambiguous result or worker crash must downgrade to manual-assist; never replay the submit automatically.
 
-- [ ] **Step 1: Write failing tests** with local fictional Greenhouse/Lever HTML and a fake SMTP transport for field inspection, supported field fill, unsupported required questions, explicit email target only, dry-run never submitting/sending, and submit ambiguity.
-- [ ] **Step 2: Run `pytest tests/unit/appliers tests/unit/collectors -v`** and verify it fails because the application adapters and apply-email normalization are absent.
-- [ ] **Step 3: Implement the common protocol and three connectors**; add only explicit application-email extraction and use the persistent session manager for browser adapters.
-- [ ] **Step 4: Run the applier and collector tests** and verify dry-run does not invoke a final submit or SMTP send, while supported fictional forms yield the expected answers.
-- [ ] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add greenhouse lever and email appliers`.
+- [x] **Step 1: Write failing tests** with local fictional Greenhouse/Lever HTML and a fake SMTP transport for field inspection, supported field fill, unsupported required questions, explicit email target only, dry-run never submitting/sending, and submit ambiguity.
+- [x] **Step 2: Run `pytest tests/unit/appliers tests/unit/collectors -v`** and verify it fails because the application adapters and apply-email normalization are absent.
+- [x] **Step 3: Implement the common protocol and three connectors**; add only explicit application-email extraction and use the persistent session manager for browser adapters.
+- [x] **Step 4: Run the applier and collector tests** and verify dry-run does not invoke a final submit or SMTP send, while supported fictional forms yield the expected answers.
+- [x] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: add greenhouse lever and email appliers`.
 
 ### Task 8: Queue orchestration, API/CLI review, and scheduling
 
@@ -240,11 +256,11 @@
   - CLI: `list-applications`, `approve APPLICATION_ID`, `decline APPLICATION_ID`, `match [--backfill]`, `browser-auth PLATFORM`, and `check-connectors`. Keep Phase 1 `collect`, `tailor`, and `list-openings` commands working.
   - Use the match-profile/policy/scoring, facts, MinIO, SMTP, and Infisical settings created in Tasks 2–6; do not duplicate configuration definitions.
 
-- [ ] **Step 1: Write failing tests** for collection-to-match enqueueing, backfill idempotency, complete lane-specific worker handling, review endpoints, 404/409 behavior, worker continuation after connector failure, and no duplicate submission after stale-job recovery.
-- [ ] **Step 2: Run the four targeted test files** and verify they fail because Phase 2 job handlers, endpoints, and commands are absent.
-- [ ] **Step 3: Implement queue handlers, scheduler jobs, review/artifact/health endpoints, CLI commands, settings, and README instructions** using the interfaces from prior tasks.
-- [ ] **Step 4: Run the targeted tests plus `tests/integration/test_automation_loop.py`** against PostgreSQL and MinIO; verify the full dry-run workflow creates a lane decision, tailored artifact, screening record, and no final submit.
-- [ ] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: connect matching and application workflow`.
+- [x] **Step 1: Write failing tests** for collection-to-match enqueueing, backfill idempotency, complete lane-specific worker handling, review endpoints, 404/409 behavior, worker continuation after connector failure, and no duplicate submission after stale-job recovery.
+- [x] **Step 2: Run the four targeted test files** and verify they fail because Phase 2 job handlers, endpoints, and commands are absent.
+- [x] **Step 3: Implement queue handlers, scheduler jobs, review/artifact/health endpoints, CLI commands, settings, and README instructions** using the interfaces from prior tasks.
+- [x] **Step 4: Run the targeted tests plus `tests/integration/test_automation_loop.py`** against PostgreSQL and MinIO; verify the full dry-run workflow creates a lane decision, tailored artifact, screening record, and no final submit.
+- [x] **Step 5: Run the full suite, Ruff lint, and formatter check; commit** as `feat: connect matching and application workflow`.
 
 ### Task 9: Phase 2 acceptance walkthrough
 

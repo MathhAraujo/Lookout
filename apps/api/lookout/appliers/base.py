@@ -245,6 +245,15 @@ class _BrowserFormApplier:
                     selector=selector,
                 )
             )
+        if any(
+            control.required
+            and (
+                control.kind == "unsupported"
+                or (control.kind == "file" and control.key != "resume")
+            )
+            for control in controls
+        ):
+            raise _ManualAssist("unsupported_required_control")
         return controls
 
     def _fields(self, controls: list[_Control]) -> list[FormQuestion]:
@@ -287,6 +296,8 @@ class _BrowserFormApplier:
                 controls = self._extract(page)
         except _ManualAssist as blocked:
             raise ApplierError(blocked.detail) from None
+        except BrowserSessionError:
+            raise ApplierError("browser_session_unavailable") from None
         return ApplicationForm(fields=self._fields(controls))
 
     def submit(

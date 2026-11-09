@@ -1,0 +1,36 @@
+services:
+  api:
+    env_file: !override
+      - .env.example
+    volumes: !override
+      - ./tests:/app/tests:ro
+      - ./.env.example:/app/.env.example:ro
+    ports: !override
+      - "127.0.0.1::8000"
+    environment:
+      KB_PATH: /app/templates/kb
+      MATCH_PROFILE_PATH: /app/templates/match-profile.yml
+      FACTS_PATH: /app/templates/facts.yml
+      BROWSER_PROFILES_PATH: /app/data/browser-profiles
+      ARTIFACTS_DIR: /app/data/artifacts
+      OPENROUTER_API_KEY: ""
+      OPENROUTER_SCORING_MODEL: fictional-scoring
+      DRY_RUN: "true"
+      AUTO_SUBMIT_ENABLED: "false"
+  worker:
+    env_file: !override
+      - .env.example
+    volumes: !override []
+    environment:
+      KB_PATH: /app/templates/kb
+      MATCH_PROFILE_PATH: /app/templates/match-profile.yml
+      FACTS_PATH: /app/templates/facts.yml
+      BROWSER_PROFILES_PATH: /app/data/browser-profiles
+      ARTIFACTS_DIR: /app/data/artifacts
+      OPENROUTER_API_KEY: ""
+      OPENROUTER_SCORING_MODEL: fictional-scoring
+      DRY_RUN: "true"
+      AUTO_SUBMIT_ENABLED: "false"
+      WORKER_POLL_SECONDS: "1"
+  infisical:
+    ports: !override []

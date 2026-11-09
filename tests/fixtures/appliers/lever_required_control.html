@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Apply — Senior Backend Engineer | Fictional Sciences</title></head>
+  <body>
+    <main>
+      <form id="lever-application" method="post" action="/submit">
+        <label>Name<input type="text" name="name" required></label>
+        <label>Email<input type="email" name="email" required></label>
+        <label>Phone<input type="tel" name="phone"></label>
+        <label>Years of experience<input type="text" name="experience_years" required></label>
+        <label>Are you authorized to work in Brazil?
+          <select name="authorized_to_work_in_brazil" required>
+            <option value="">Select an option</option>
+            <option>Yes, authorized</option>
+            <option>Requires sponsorship</option>
+          </select>
+        </label>
+        <label>Resume<input type="file" name="resume" required></label>
+        <label>Signature<div class="signature-widget" aria-required="true"></div></label>
+        <button type="submit">Submit Application</button>
+      </form>
+    </main>
+  </body>
+</html>

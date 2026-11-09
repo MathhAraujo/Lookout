@@ -13,6 +13,7 @@ from lookout.ingest import IngestStats, collect_source
 from lookout.llm import OpenRouterClient
 from lookout.queue import claim_next, complete, enqueue, fail, heartbeat, owned_job, reap_stale
 from lookout.tailor.pipeline import tailor_resume
+from lookout.workflow import apply_application, match_opening
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,22 @@ def handle_tailor(session: Session, settings: Settings, payload: dict) -> None:
 
 
 JobHandler = Callable[[Session, Settings, dict], None]
+
+
+def handle_match(session: Session, settings: Settings, payload: dict) -> None:
+    match_opening(session, settings, uuid.UUID(payload["opening_id"]))
+
+
+def handle_apply(session: Session, settings: Settings, payload: dict) -> None:
+    lease = (uuid.UUID(payload["_job_id"]), payload["_attempt"]) if "_job_id" in payload else None
+    apply_application(session, settings, uuid.UUID(payload["application_id"]), lease=lease)
+
+
 JOB_HANDLERS: dict[str, JobHandler] = {
     "collect": handle_collect,
     "tailor": handle_tailor,
+    "match": handle_match,
+    "apply": handle_apply,
 }
 
 
@@ -72,6 +86,8 @@ def process_next_job(session: Session, settings: Settings) -> bool:
     job_type = job.type
     payload = dict(job.payload)
     attempt = job.attempts
+    if job_type == "apply":
+        payload.update(_job_id=str(job_id), _attempt=attempt)
     session.commit()
     stop_heartbeat = threading.Event()
     lease_thread = threading.Thread(
@@ -134,6 +150,20 @@ def _reap_stale_jobs(settings: Settings) -> None:
         logger.warning("Requeued %s stale jobs", reaped)
 
 
+def _expire_reviews(settings: Settings) -> None:
+    from lookout.routing import expire_reviews
+
+    with session_scope(settings) as session:
+        expire_reviews(session)
+
+
+def _check_connectors(settings: Settings) -> None:
+    from lookout.connector_health import refresh_connector_health
+
+    with session_scope(settings) as session:
+        refresh_connector_health(session, settings)
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     settings = get_settings()
@@ -166,6 +196,24 @@ def main() -> None:
                 id=f"enqueue-{source}",
                 replace_existing=True,
             )
+
+    if settings.workflow_enabled:
+        scheduler.add_job(
+            _expire_reviews,
+            "interval",
+            args=[settings],
+            hours=1,
+            id="expire-reviews",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            _check_connectors,
+            "interval",
+            args=[settings],
+            days=1,
+            id="check-connectors",
+            replace_existing=True,
+        )
 
     scheduler.start()
     logger.info("worker started")

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from _helpers import base_url, lever_answers, make_application, make_opening
 from lookout.appliers import ApplicationForm, ApplierError, LeverApplier
 from lookout.browser_sessions import (
@@ -149,3 +150,22 @@ def test_submit_unavailable_session_degrades_to_manual_assist(local_site, resume
 
     assert result.status == "manual_assist"
     assert result.detail == "browser_session_unavailable"
+
+
+def test_required_unsupported_control_blocks_inspection_and_submission(
+    local_site, resume_pdf, tmp_path
+):
+    applier = LeverApplier(_sessions(tmp_path))
+    opening = make_opening(f"{base_url(local_site)}/lever_required_control.html", source="lever")
+    with pytest.raises(ApplierError, match="unsupported_required_control"):
+        applier.inspect(opening, resume_path=resume_pdf)
+    result = applier.submit(
+        make_application(),
+        opening,
+        resume_path=resume_pdf,
+        answers=lever_answers(),
+        dry_run=False,
+        auto_submit_enabled=True,
+    )
+    assert result.status == "manual_assist"
+    assert local_site.recorder.submission_posts == 0

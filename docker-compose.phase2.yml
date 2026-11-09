@@ -75,6 +75,8 @@ services:
     restart: unless-stopped
 
   api:
+    environment:
+      WORKFLOW_ENABLED: "true"
     build:
       args:
         INSTALL_BROWSERS: "true"
@@ -82,6 +84,8 @@ services:
       minio-init:
         condition: service_completed_successfully
   worker:
+    environment:
+      WORKFLOW_ENABLED: "true"
     build:
       args:
         INSTALL_BROWSERS: "true"

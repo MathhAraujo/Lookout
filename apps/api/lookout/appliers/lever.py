@@ -10,7 +10,7 @@ _EXTRACTION_JS = """() => {
   const form = document.querySelector('#lever-application');
   if (!form) return null;
   const nodes = form.querySelectorAll(
-    'input[type="file"], input:not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="checkbox"]), textarea, select, .signature-widget'
+    'input[type="file"], input:not([type="file"]):not([type="hidden"]):not([type="submit"]), textarea, select, .signature-widget'
   );
   return Array.from(nodes).map((node) => {
     if (node.type === 'file') {
@@ -28,7 +28,8 @@ _EXTRACTION_JS = """() => {
       };
     }
     let kind;
-    if (node.classList && node.classList.contains('signature-widget')) {
+    if ((node.classList && node.classList.contains('signature-widget')) ||
+        (node.tagName === 'INPUT' && !['text', 'email', 'tel', 'url', 'number', 'search'].includes(node.type))) {
       kind = 'unsupported';
     } else if (node.tagName === 'SELECT') {
       kind = 'select';

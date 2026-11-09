@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     match_profile_path: Path = Path("data/match-profile.yml")
     matching_policy_path: Path = Path("config/matching.yml")
     facts_path: Path = Path("data/facts.yml")
+    workflow_enabled: bool = False
+    browser_profiles_path: Path = Path("data/browser-profiles")
     openrouter_scoring_model: str = ""
     minio_endpoint_url: str = "http://minio:9000"
     minio_bucket: str = "lookout-artifacts"

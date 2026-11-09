@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlmodel import Session, select
 
 from lookout.db import utcnow
-from lookout.models import Application, ApplicationEvent
+from lookout.models import Application, ApplicationEvent, Opening
 
 ApplicationLane = Literal["auto_apply", "review", "manual_assist", "rejected"]
 ApplicationStatus = Literal[
@@ -183,6 +183,19 @@ def transition_application(
 
 def get_application(session: Session, application_id: UUID) -> Application | None:
     return session.get(Application, application_id)
+
+
+def application_details(session: Session, application: Application) -> dict:
+    opening = session.get(Opening, application.opening_id)
+    return {
+        **application.model_dump(mode="json"),
+        "opening": {
+            "id": str(opening.id),
+            "company": opening.company,
+            "title": opening.title,
+            "url": opening.url,
+        },
+    }
 
 
 def list_applications(

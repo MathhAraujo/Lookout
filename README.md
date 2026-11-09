@@ -3,8 +3,10 @@
 An AI agent that automatically applies to job openings on your behalf.
 Primarily written in Python.
 
-> Status: Phase 1 MVP is implemented. See the [acceptance walkthrough](docs/runbooks/phase-1-acceptance.md)
-> for verification results and credential-dependent integrations.
+> Status: Phase 1 MVP and the Phase 2 automation backend are implemented. See the
+> [Phase 1](docs/runbooks/phase-1-acceptance.md) and
+> [Phase 2](docs/runbooks/phase-2-acceptance.md) acceptance records for verification
+> results and credential-dependent checks. The web frontend remains Phase 3.
 
 ## Running (Phase 1 MVP)
 
@@ -139,18 +141,74 @@ TLS and authentication must succeed before any application email is sent.
 Never put SMTP or job-board passwords in `.env.example`, logs, or application
 records.
 
-After the Phase 2 CLI command is available, initialize Greenhouse and Lever
-browser profiles manually:
+Initialize Greenhouse and Lever browser profiles manually from the repository
+root on a host with the Python package, Playwright Chromium, a desktop display,
+and an interactive terminal:
 
 ```bash
-docker compose exec api python -m lookout.cli browser-auth greenhouse
-docker compose exec api python -m lookout.cli browser-auth lever
+python -m lookout.cli browser-auth greenhouse
+python -m lookout.cli browser-auth lever
 ```
 
 Profiles stay under the ignored `data/browser-profiles/` directory. Complete
 Google SSO or password login by hand; CAPTCHA and 2FA are never automated.
+The default containers have no desktop display; run browser authentication on
+the host, or supply your own display configuration for interactive containers.
 Dry-run remains enabled by default. Real submission requires both
 `DRY_RUN=false` and `AUTO_SUBMIT_ENABLED=true`.
+
+## Phase 2 workflow operations
+
+Prepare your local matching preferences and approved screening answers before
+enabling automatic matching. The template values are fictional:
+
+```bash
+cp -n templates/match-profile.yml data/match-profile.yml
+cp -n templates/facts.yml data/facts.yml
+```
+
+Set both `OPENROUTER_TAILORING_MODEL` and `OPENROUTER_SCORING_MODEL` in `.env`.
+They may use the same selected model, including a free model that passes the
+structured-output checks. No fallback to another paid model is selected by the
+application.
+
+The Phase 2 Compose overlay enables `WORKFLOW_ENABLED=true`. Without the overlay,
+the setting defaults to `false`, preserving standalone Phase 1 operation.
+Explicit `match` commands can also enqueue matching while automatic matching is
+disabled. Collection inserts and their matching jobs commit together; repeated
+collection and backfill do not create duplicate decisions.
+
+```bash
+docker compose exec api python -m lookout.cli match --backfill
+docker compose exec api python -m lookout.cli list-applications --lane review
+docker compose exec api python -m lookout.cli approve <APPLICATION_ID>
+docker compose exec api python -m lookout.cli decline <APPLICATION_ID>
+docker compose exec api python -m lookout.cli check-connectors
+```
+
+New openings pass through deterministic filtering and scoring. Rejected openings
+receive no PDF. Review and manual-assist items receive a PDF in MinIO; only
+auto-apply items and approved reviews proceed to form inspection and screening.
+Identity fields are resolved locally, and unknown required questions block
+submission. Answer text stays in MinIO, with only answer metadata in PostgreSQL.
+Reviews expire after seven days; the worker checks expiry hourly and connector
+health daily.
+
+The API exposes:
+
+- `GET /applications?lane=review&status=awaiting_review&limit=100&offset=0`
+- `GET /applications/{id}` with the opening's company, title, and source URL
+- `POST /applications/{id}/approve` and `POST /applications/{id}/decline`
+- `GET /applications/{id}/artifacts` for metadata and artifact IDs
+- `GET /artifacts/{artifact_id}` for an integrity-checked PDF or JSON download
+- `GET /connectors/health` for persisted connector health
+
+A submission is recorded as `submitting` before external I/O. An interrupted or
+ambiguous submission goes to manual-assist and is never automatically replayed.
+Missing secrets, unavailable sessions, and unsupported required form controls
+also produce a manual-assist reason. Retrying a final record upload does not
+repeat a completed submission. Changes to submission flags do not replay items
+already completed in dry-run.
 
 ## Development verification
 

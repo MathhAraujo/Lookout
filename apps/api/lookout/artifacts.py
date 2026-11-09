@@ -6,6 +6,8 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
+from lookout.config import Settings
+
 ArtifactKind = Literal["resume", "answers", "opening_record"]
 _ARTIFACT_KINDS = frozenset({"resume", "answers", "opening_record"})
 
@@ -24,6 +26,15 @@ class ArtifactStoreError(Exception):
 
 class ArtifactNotFoundError(ArtifactStoreError):
     """Raised when an artifact key does not exist."""
+
+
+def build_artifact_store(settings: Settings) -> "S3ArtifactStore":
+    return S3ArtifactStore(
+        endpoint_url=settings.minio_endpoint_url,
+        bucket=settings.minio_bucket,
+        access_key=settings.minio_access_key,
+        secret_key=settings.minio_secret_key,
+    )
 
 
 def build_artifact_object_key(application_id: UUID, artifact_id: UUID, kind: ArtifactKind) -> str:

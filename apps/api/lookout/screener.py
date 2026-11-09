@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import dataclass
 from typing import Literal
 
@@ -128,6 +129,10 @@ class ResolvedAnswer:
 def classify_question(question: FormQuestion) -> QuestionClass | None:
     label = normalize_text(question.label)
     for question_class, aliases in _QUESTION_ALIASES:
+        if question_class == "experience_years" and re.search(
+            r"\byears? (?:of (?:[\w+#.-]+ )*)?experience\b", label
+        ):
+            return question_class
         if any(normalize_text(alias) in label for alias in aliases):
             return question_class
     return None

@@ -182,3 +182,20 @@ def save_connector_health(
 
     session.flush()
     return health
+
+
+def refresh_connector_health(session: Session, settings: Settings) -> list[ConnectorHealth]:
+    from lookout.secrets import InfisicalSecretProvider
+
+    secrets = InfisicalSecretProvider(settings)
+    sessions = BrowserSessionManager(settings.browser_profiles_path)
+    results = []
+    for platform in ("greenhouse", "lever", "email"):
+        try:
+            snapshot = check_connector_health(
+                platform, settings=settings, secrets=secrets, sessions=sessions
+            )
+        except Exception:  # noqa: BLE001 - isolate connectivity failures between connectors
+            snapshot = _snapshot(platform, "unavailable", "health_check_failed")
+        results.append(save_connector_health(session, snapshot))
+    return results
