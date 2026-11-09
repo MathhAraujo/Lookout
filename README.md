@@ -191,6 +191,13 @@ receive no PDF. Review and manual-assist items receive a PDF in MinIO; only
 auto-apply items and approved reviews proceed to form inspection and screening.
 Identity fields are resolved locally, and unknown required questions block
 submission. Answer text stays in MinIO, with only answer metadata in PostgreSQL.
+Generic screening facts apply only to supported unqualified questions. A question
+about a specific technology, country, salary unit, or different yes/no polarity
+requires an explicit approval keyed by its wording, for example
+`key: "question:Years of Python experience"` in `data/facts.yml`. Question wording
+is normalized for case, whitespace, and trailing question/required markers while
+preserving technology and currency symbols; a form field name alone
+never authorizes a factual answer. The committed examples are fictional.
 Reviews expire after seven days; the worker checks expiry hourly and connector
 health daily.
 
@@ -209,6 +216,10 @@ Missing secrets, unavailable sessions, and unsupported required form controls
 also produce a manual-assist reason. Retrying a final record upload does not
 repeat a completed submission. Changes to submission flags do not replay items
 already completed in dry-run.
+Browser connectors also compare the inspected questions, control types, options,
+and form destination before filling and again before a final click. Changed
+forms go to manual-assist; browser inspection failures retain the prepared PDF
+and surface a sanitized error.
 
 ## Development verification
 

@@ -1,7 +1,13 @@
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+
+
+def normalize_question_label(label: str) -> str:
+    """Normalize presentation markers without merging technologies or currency symbols."""
+    return " ".join(unicodedata.normalize("NFKC", label).casefold().split()).rstrip(" ?*")
 
 
 @dataclass(frozen=True)
@@ -50,6 +56,11 @@ def load_facts(path: Path) -> ApprovedFacts:
             raise FactsError("invalid approved facts")
 
         normalized_key = key.strip()
+        if normalized_key.startswith("question:"):
+            label = normalize_question_label(normalized_key.removeprefix("question:"))
+            if not label:
+                raise FactsError("invalid approved facts")
+            normalized_key = f"question:{label}"
         normalized_value = value.strip()
         options = tuple(option.strip() for option in allowed_values)
         if options and normalized_value.casefold() not in {option.casefold() for option in options}:

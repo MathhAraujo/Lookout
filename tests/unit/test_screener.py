@@ -69,6 +69,88 @@ def test_years_of_technology_experience_uses_approved_numeric_fact():
     assert classify_question(question) == "experience_years"
 
 
+@pytest.mark.parametrize(
+    "label",
+    [
+        "Years of Rust experience",
+        "Years of neurosurgery experience",
+        "Are you legally authorized to work in the United States?",
+        "Are you not legally authorized to work?",
+        "Can you work without visa sponsorship?",
+        "What are your monthly salary expectations?",
+    ],
+)
+def test_generic_facts_do_not_answer_qualified_or_inverted_questions(kb, label):
+    llm = FakeAnswerLLM()
+    answer = resolve_question(
+        FormQuestion("question1", label, True), load_facts(FACTS_PATH), kb, llm=llm, pii=kb.identity
+    )
+    assert answer.status == "blocked"
+    assert answer.answer is None
+    assert llm.calls == 0
+
+
+def test_exact_question_approval_is_scoped_and_normalized(kb, tmp_path):
+    path = tmp_path / "facts.yml"
+    path.write_text("""facts:
+  - key: experience_years
+    value: "5"
+  - key: "question: Years of Rust experience?"
+    value: "2"
+""")
+    facts = load_facts(path)
+    approved = resolve_question(
+        FormQuestion("question1", "Years of Rust experience?", True),
+        facts,
+        kb,
+        llm=FakeAnswerLLM(),
+        pii=kb.identity,
+    )
+    different = resolve_question(
+        FormQuestion("question1", "Years of Python experience?", True),
+        facts,
+        kb,
+        llm=FakeAnswerLLM(),
+        pii=kb.identity,
+    )
+    assert approved.answer == "2"
+    assert different.status == "blocked"
+
+
+def test_generic_experience_fact_remains_valid_for_unqualified_question(kb):
+    answer = resolve_question(
+        FormQuestion("years", "Years of experience", True),
+        load_facts(FACTS_PATH),
+        kb,
+        llm=FakeAnswerLLM(),
+        pii=kb.identity,
+    )
+    assert answer.answer == "5"
+
+
+@pytest.mark.parametrize("other_technology", ["C", "C#"])
+def test_exact_question_approval_preserves_technology_symbols(kb, tmp_path, other_technology):
+    path = tmp_path / "facts.yml"
+    path.write_text('facts:\n  - key: "question:Years of C++ experience?"\n    value: "5"\n')
+    facts = load_facts(path)
+    approved = resolve_question(
+        FormQuestion("years", "Years of C++ experience?", True),
+        facts,
+        kb,
+        llm=FakeAnswerLLM(),
+        pii=kb.identity,
+    )
+    other = resolve_question(
+        FormQuestion("years", f"Years of {other_technology} experience?", True),
+        facts,
+        kb,
+        llm=FakeAnswerLLM(),
+        pii=kb.identity,
+    )
+    assert approved.answer == "5"
+    assert other.status == "blocked"
+
+
 def test_question_classification_is_case_insensitive():
     question = FormQuestion(
         key="salary",

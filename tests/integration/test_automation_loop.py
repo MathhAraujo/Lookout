@@ -319,6 +319,78 @@ def test_connector_inspection_preserves_safe_failure_reason(
     assert application.last_error == "browser_session_expired"
 
 
+def test_browser_inspection_timeout_preserves_pdf_and_surfaces_manual_assist(
+    session, engine, tmp_path, monkeypatch, opening_fixture
+):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+
+    from lookout.appliers import GreenhouseApplier
+    from lookout.matching import MatchDecision
+    from lookout.routing import persist_decision
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
+
+    class Page:
+        url = "https://example.com/job"
+
+        def goto(self, *args, **kwargs):
+            return SimpleNamespace(status=200)
+
+        def inner_text(self, *args, **kwargs):
+            raise PlaywrightTimeout("fictional-private-page-payload")
+
+    class Sessions:
+        @contextmanager
+        def open(self, *args, **kwargs):
+            yield SimpleNamespace(new_page=lambda: Page())
+
+    settings, _, _ = configure_workflow(monkeypatch, tmp_path, engine)
+    application = persist_decision(
+        session, opening_fixture, MatchDecision(95, [], [], "auto_apply")
+    )
+    monkeypatch.setattr(
+        "lookout.workflow.build_applier", lambda *args: GreenhouseApplier(Sessions())
+    )
+    job = enqueue(session, "apply", {"application_id": str(application.id)})
+    assert process_next_job(session, settings)
+    session.refresh(application)
+    session.refresh(job)
+    assert (application.lane, application.status) == ("manual_assist", "manual_assist")
+    assert application.last_error == "apply_form_unavailable"
+    assert job.status == "done"
+    assert session.exec(
+        select(ApplicationArtifact).where(ApplicationArtifact.kind == "resume")
+    ).one()
+
+
+def test_identity_field_name_does_not_answer_a_different_persons_question(
+    session, engine, tmp_path, monkeypatch, opening_fixture
+):
+    from lookout.matching import MatchDecision
+    from lookout.routing import persist_decision
+
+    settings, _, _ = configure_workflow(monkeypatch, tmp_path, engine)
+    application = persist_decision(
+        session, opening_fixture, MatchDecision(95, [], [], "auto_apply")
+    )
+    submissions = []
+
+    class Applier:
+        def inspect(self, *args, **kwargs):
+            return ApplicationForm([FormQuestion("email", "Previous manager email address", True)])
+
+        def submit(self, *args, **kwargs):
+            submissions.append(True)
+            return ApplyResult("dry_run", "dry_run_fill_succeeded")
+
+    monkeypatch.setattr("lookout.workflow.build_applier", lambda *args: Applier())
+    enqueue(session, "apply", {"application_id": str(application.id)})
+    process_next_job(session, settings)
+    session.refresh(application)
+    assert application.status == "blocked"
+    assert submissions == []
+
+
 @pytest.mark.parametrize(
     "platform,filename", [("greenhouse", "greenhouse_form.html"), ("lever", "lever_posting.html")]
 )

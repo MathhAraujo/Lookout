@@ -22,3 +22,14 @@ facts:
     value: "Sao Paulo, Brazil"
   - key: experience_years
     value: "5"
+
+  # These fictional facts approve only the exact normalized question wording.
+  - key: "question:Years of Python experience"
+    value: "5"
+  - key: "question:How many years of Python experience?"
+    value: "5"
+  - key: "question:Are you authorized to work in Brazil?"
+    value: "Yes"
+    allowed_values:
+      - "Yes"
+      - "No"

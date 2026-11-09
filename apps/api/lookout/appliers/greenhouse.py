@@ -43,7 +43,12 @@ _EXTRACTION_JS = """() => {
       : node.name
         ? '[name="' + node.name + '"]'
         : (node.classList && node.classList.length ? '.' + node.classList[0] : '');
-    return { kind, name: node.name || '', label, required, options, selector };
+    const option_values = kind === 'select'
+      ? Array.from(node.querySelectorAll('option')).filter(option => option.value.length > 0)
+          .filter(option => option.textContent.trim().length > 0).map(option => option.value)
+      : [];
+    return { kind, name: node.name || '', label, required, options, selector,
+      option_values, input_type: node.type || node.tagName.toLowerCase() };
   });
 }"""
 

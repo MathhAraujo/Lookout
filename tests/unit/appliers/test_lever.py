@@ -169,3 +169,38 @@ def test_required_unsupported_control_blocks_inspection_and_submission(
     )
     assert result.status == "manual_assist"
     assert local_site.recorder.submission_posts == 0
+
+
+@pytest.mark.parametrize(
+    "old,new",
+    [
+        ("Years of experience", "Years of Rust experience"),
+        ('action="/submit"', 'action="/different-destination"'),
+        ('name="experience_years" required', 'name="experience_years"'),
+        ('type="text" name="experience_years"', 'type="number" name="experience_years"'),
+        (
+            "<option>Yes, authorized</option>",
+            '<option value="changed-server-value">Yes, authorized</option>',
+        ),
+    ],
+)
+def test_changed_form_is_never_filled_or_submitted(local_site, resume_pdf, tmp_path, old, new):
+    fixture = Path("tests/fixtures/appliers/lever_apply.html").read_text()
+    page = tmp_path / "changing_form.html"
+    page.write_text(fixture)
+    local_site.root = tmp_path
+    applier = LeverApplier(_sessions(tmp_path))
+    opening = make_opening(f"{base_url(local_site)}/changing_form.html", source="lever")
+    applier.inspect(opening, resume_path=resume_pdf)
+    assert old in fixture
+    page.write_text(fixture.replace(old, new))
+    result = applier.submit(
+        make_application(),
+        opening,
+        resume_path=resume_pdf,
+        answers=lever_answers(),
+        dry_run=False,
+        auto_submit_enabled=True,
+    )
+    assert (result.status, result.detail) == ("manual_assist", "application_form_changed")
+    assert local_site.recorder.submission_posts == 0

@@ -100,6 +100,8 @@ class _Control:
     kind: Literal["text", "select", "file", "unsupported"]
     options: tuple[str, ...]
     selector: str
+    input_type: str
+    option_values: tuple[str, ...]
 
 
 def _slug_key(label: str) -> str:
@@ -147,6 +149,7 @@ class _BrowserFormApplier:
     def __init__(self, sessions: BrowserSessionManager, *, headless: bool = True) -> None:
         self._sessions = sessions
         self._headless = headless
+        self._inspected_signature = None
 
     def _key_for(self, node: dict) -> str:
         name = node.get("name") or ""
@@ -243,6 +246,8 @@ class _BrowserFormApplier:
                     kind=kind,
                     options=tuple(node.get("options") or ()),
                     selector=selector,
+                    input_type=node.get("input_type", kind),
+                    option_values=tuple(node.get("option_values") or ()),
                 )
             )
         if any(
@@ -255,6 +260,28 @@ class _BrowserFormApplier:
         ):
             raise _ManualAssist("unsupported_required_control")
         return controls
+
+    def _form_signature(self, page, controls):
+        destination = page.locator(self.submit_selector).evaluate("""node => {
+          const form = node.form || node.closest('form');
+          if (!form) return null;
+          return {
+            action: node.hasAttribute('formaction') ? node.formAction : form.action,
+            method: node.getAttribute('formmethod') || form.method,
+            target: node.getAttribute('formtarget') || form.target,
+            enctype: node.getAttribute('formenctype') || form.enctype
+          };
+        }""")
+        if destination is None:
+            raise _ManualAssist("apply_form_unavailable")
+        return page.url, tuple(controls), destination
+
+    def _verify_inspected_form(self, page, controls):
+        if (
+            self._inspected_signature is not None
+            and self._form_signature(page, controls) != self._inspected_signature
+        ):
+            raise _ManualAssist("application_form_changed")
 
     def _fields(self, controls: list[_Control]) -> list[FormQuestion]:
         return [
@@ -294,10 +321,14 @@ class _BrowserFormApplier:
         try:
             with self._page_for(opening) as page:
                 controls = self._extract(page)
+                signature = self._form_signature(page, controls)
         except _ManualAssist as blocked:
             raise ApplierError(blocked.detail) from None
         except BrowserSessionError:
             raise ApplierError("browser_session_unavailable") from None
+        except Exception:  # noqa: BLE001 - sanitize the entire browser inspection boundary
+            raise ApplierError("apply_form_unavailable") from None
+        self._inspected_signature = signature
         return ApplicationForm(fields=self._fields(controls))
 
     def submit(
@@ -321,8 +352,10 @@ class _BrowserFormApplier:
         try:
             with self._page_for(opening) as page:
                 controls = self._extract(page)
+                self._verify_inspected_form(page, controls)
                 self._fill(page, controls, answers)
                 page.set_input_files(self.resume_selector, str(resume_path), timeout=5_000)
+                self._verify_inspected_form(page, self._extract(page))
                 if dry_run:
                     return ApplyResult("dry_run", "dry_run_fill_succeeded")
                 self._click_and_verify(page)

@@ -6,7 +6,7 @@ from typing import Literal
 from sqlmodel import Session
 
 from lookout.applications import Application
-from lookout.facts import ApprovedFact, ApprovedFacts
+from lookout.facts import ApprovedFact, ApprovedFacts, normalize_question_label
 from lookout.kb import KnowledgeBase, kb_to_prompt_text
 from lookout.llm import LLMError, OpenRouterClient
 from lookout.models import ApplicationAnswer
@@ -107,6 +107,45 @@ _FACTUAL_QUESTION_CLASSES = frozenset(
     }
 )
 _INFERABLE_QUESTION_CLASSES = frozenset({"motivation", "relevant_experience"})
+
+# Only these unqualified phrasings may reuse a class-level fact. Country,
+# technology, units, and polarity changes require an exact question approval.
+_UNQUALIFIED_FACT_LABELS = {
+    "work_authorization": (
+        "Are you legally authorized to work?",
+        "Are you authorized to work?",
+        "Work authorization",
+    ),
+    "sponsorship": (
+        "Will you require visa sponsorship?",
+        "Do you require visa sponsorship?",
+        "Do you need visa sponsorship?",
+        "Visa sponsorship",
+    ),
+    "salary": ("What are your salary expectations?", "Salary expectations"),
+    "start_date": (
+        "When can you start?",
+        "When are you available to start?",
+        "Start date",
+        "Notice period",
+    ),
+    "relocation": (
+        "Are you willing to relocate?",
+        "Are you open to relocation?",
+        "Willing to relocate",
+    ),
+    "location": ("Where are you located?", "Current location", "City and country", "Location"),
+    "experience_years": (
+        "How many years of experience?",
+        "Years of experience",
+        "Years experience",
+        "Total years of experience",
+    ),
+}
+_UNQUALIFIED_FACT_LABELS = {
+    question_class: frozenset(normalize_question_label(label) for label in labels)
+    for question_class, labels in _UNQUALIFIED_FACT_LABELS.items()
+}
 
 
 @dataclass(frozen=True)
@@ -229,13 +268,22 @@ def resolve_question(
     llm: OpenRouterClient,
     pii: PiiProfile,
 ) -> ResolvedAnswer:
+    normalized_label = normalize_question_label(question.label)
+    specific_fact = facts.facts.get(f"question:{normalized_label}")
+    if specific_fact is not None:
+        return _resolve_fact(question, specific_fact)
     question_class = classify_question(question)
     if question_class is None:
         return _unresolved_answer(question)
 
     fact = facts.facts.get(question_class)
-    if question.disqualifying or question_class in _FACTUAL_QUESTION_CLASSES:
+    if question_class in _FACTUAL_QUESTION_CLASSES:
+        if normalized_label not in _UNQUALIFIED_FACT_LABELS[question_class]:
+            fact = None
         return _resolve_fact(question, fact)
+
+    if question.disqualifying:
+        return _unresolved_answer(question)
 
     if question_class in _INFERABLE_QUESTION_CLASSES:
         if fact is not None:

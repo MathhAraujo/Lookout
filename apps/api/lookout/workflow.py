@@ -23,7 +23,7 @@ from lookout.appliers import (
 from lookout.artifacts import ArtifactStore, build_artifact_object_key, build_artifact_store
 from lookout.browser_sessions import BrowserSessionManager
 from lookout.config import Settings
-from lookout.facts import FactsError, load_facts
+from lookout.facts import FactsError, load_facts, normalize_question_label
 from lookout.kb import load_identity, load_knowledge_base
 from lookout.llm import OpenRouterClient
 from lookout.match_profile import load_match_profile
@@ -53,6 +53,7 @@ _SAFE_CONNECTOR_DETAILS = frozenset(
         "browser_session_expired",
         "manual_verification_required",
         "apply_form_unavailable",
+        "application_form_changed",
         "unsupported_required_control",
         "required_answers_missing",
         "option_value_missing",
@@ -285,9 +286,20 @@ def _screen(session, application, questions, settings, llm):
         "email": kb.identity.email,
         "phone": kb.identity.phone,
     }
+    identity_labels = {
+        "name": {"name", "full name", "your name"},
+        "full_name": {"name", "full name", "your name"},
+        "first_name": {"first name", "given name"},
+        "last_name": {"last name", "family name", "surname"},
+        "email": {"email", "email address", "your email", "your email address"},
+        "phone": {"phone", "phone number", "telephone", "mobile phone"},
+    }
     local, remaining = [], []
     for question in questions:
-        if question.key not in identity:
+        if (
+            question.key not in identity
+            or normalize_question_label(question.label) not in identity_labels[question.key]
+        ):
             remaining.append(question)
             continue
         value = identity[question.key]
@@ -295,7 +307,13 @@ def _screen(session, application, questions, settings, llm):
             value = next(
                 (option for option in question.options if option.casefold() == value.casefold()), ""
             )
-        status = "answered" if value else "blocked" if question.required else "skipped"
+        status = (
+            "answered"
+            if value
+            else "blocked"
+            if question.required or question.disqualifying
+            else "skipped"
+        )
         local.append(ResolvedAnswer(question.key, value or None, "fact", status))
     session.add_all(
         ApplicationAnswer(
@@ -369,6 +387,10 @@ def apply_application(
                 form = applier.inspect(opening, resume_path=resume_path)
             except ApplierError as error:
                 _manual(session, application, _safe_connector_detail(error.detail))
+                _save_record(session, store, application, directory)
+                return
+            except Exception:  # noqa: BLE001 - unexpected connector inspection failures fail closed
+                _manual(session, application, "apply_form_unavailable")
                 _save_record(session, store, application, directory)
                 return
             try:
