@@ -16,7 +16,10 @@
   failing-test checkpoints were not replayed after their modules already existed.
 - Task 8: implemented and verified with 332 passing tests, Ruff lint/format,
   a wheel build, and 33 workflow/operational tests against real PostgreSQL/MinIO.
-- Task 9: final container acceptance and its runbook are in progress.
+- Task 9: isolated full-stack dry-run acceptance passed; the API image ran all
+  332 tests against PostgreSQL/MinIO, both images built, migrations had no drift,
+  and the dedicated fixture-worker/live-API smoke passed. Credential-dependent
+  external checks are explicitly recorded in the acceptance runbook.
 - Live fictional OpenRouter acceptance passed for EN/PT-BR fact-selection PDFs
   and structured scoring with the selected free model.
 - `WORKFLOW_ENABLED` defaults to false to preserve standalone Phase 1 startup;
@@ -268,13 +271,13 @@ were repeated during this execution.
 - Create: `docs/runbooks/phase-2-acceptance.md`
 - Modify: `README.md` if the verified Phase 2 startup/operations commands need a concise update.
 
-- [ ] **Step 1: Prepare fictional/local test data** from committed templates; verify `.env`, `data/`, browser profiles, and MinIO objects are ignored or local-only.
-- [ ] **Step 2: Start the complete local stack** and verify PostgreSQL migrations, API, worker, MinIO bucket, Infisical, and health checks.
-- [ ] **Step 3: Run matching and review flows** with fake LLM outputs and fictional openings; verify all four lanes, seven-day expiry, approval/decline, and re-run idempotency.
-- [ ] **Step 4: Run the application flow in dry-run only** against local HTML fixtures, then manually inspect one authorized Greenhouse/Lever form without final submission if credentials are available. Do not submit a real application as part of acceptance.
-- [ ] **Step 5: Verify artifacts and failure behavior**: download the PDF/answer record from MinIO, test missing secrets and expired sessions, and confirm logs/events contain no credentials, direct PII, or full answer payloads.
-- [ ] **Step 6: Run final gates**: `docker compose exec api pytest -q`, `docker compose exec api ruff check .`, `docker compose exec api ruff format --check apps tests`, and `docker compose build api worker`; record exact results and skipped credential-dependent checks in the runbook.
-- [ ] **Step 7: Commit** the verified acceptance record as `docs: record phase 2 acceptance results`.
+- [x] **Step 1: Prepare fictional/local test data** from committed templates; verify `.env`, `data/`, browser profiles, and MinIO objects are ignored or local-only.
+- [x] **Step 2: Start the complete local stack** and verify PostgreSQL migrations, API, worker, MinIO bucket, Infisical, and health checks.
+- [x] **Step 3: Run matching and review flows** with fake LLM outputs and fictional openings; verify all four lanes, seven-day expiry, approval/decline, and re-run idempotency.
+- [x] **Step 4: Run the application flow in dry-run only** against local HTML fixtures, then manually inspect one authorized Greenhouse/Lever form without final submission if credentials are available. Do not submit a real application as part of acceptance.
+- [x] **Step 5: Verify artifacts and failure behavior**: download the PDF/answer record from MinIO, test missing secrets and expired sessions, and confirm logs/events contain no credentials, direct PII, or full answer payloads.
+- [x] **Step 6: Run final gates**: `docker compose exec api pytest -q`, `docker compose exec api ruff check .`, `docker compose exec api ruff format --check apps tests`, and `docker compose build api worker`; record exact results and skipped credential-dependent checks in the runbook.
+- [x] **Step 7: Commit** the verified acceptance record as `docs: record phase 2 acceptance results`.
 
 ---
 

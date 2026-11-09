@@ -501,7 +501,9 @@ def test_pii_remaining_after_redaction_skips_llm(monkeypatch):
 
 
 def test_scoring_client_fails_explicitly_without_model_setting():
-    settings = Settings(_env_file=None, openrouter_api_key="fictional-openrouter-key")
+    settings = Settings(
+        _env_file=None, openrouter_api_key="fictional-openrouter-key", openrouter_scoring_model=""
+    )
 
     with pytest.raises(MatchingConfigurationError, match="OPENROUTER_SCORING_MODEL"):
         build_scoring_client(settings)

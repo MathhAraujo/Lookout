@@ -8,6 +8,7 @@ services:
     ports: !override
       - "127.0.0.1::8000"
     environment:
+      LOOKOUT_ACCEPTANCE: "true"
       KB_PATH: /app/templates/kb
       MATCH_PROFILE_PATH: /app/templates/match-profile.yml
       FACTS_PATH: /app/templates/facts.yml

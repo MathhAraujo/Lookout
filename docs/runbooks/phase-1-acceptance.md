@@ -1,5 +1,17 @@
 # Phase 1 Acceptance Walkthrough
 
+## Live selection-contract acceptance — 2026-11-09
+
+The previously pending live OpenRouter check passed with the configured free
+model using fictional facts. The approved-selection pipeline generated one-page
+EN and PT-BR PDFs with selectable text and the fixed local header. Structured
+scoring also returned a valid response. See the Phase 2 acceptance record for
+the model, observed PDF measurements, and complete verification scope.
+
+The November 5 section below remains the historical record of that execution;
+its live-model pending status was resolved by this later check. Gmail, Adzuna,
+and authorized live ATS forms remain credential/configuration-dependent.
+
 ## Re-acceptance — 2026-11-05
 
 Implementation and local regression gates passed. Live OpenRouter acceptance for

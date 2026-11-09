@@ -1,7 +1,9 @@
 # Lookout — Product Requirements Document
 
 > Status: Agent requirements **FROZEN** (Q1–Q16, F1–F10, C1). Stack **FROZEN** (§11, round S).
-> Next: Phase 1 implementation plan. Language of record: English; conversation in pt-br.
+> Implementation: Phase 1 MVP and Phase 2 automation backend are implemented;
+> see the acceptance runbooks for verification scope. The frontend remains Phase 3.
+> Language of record: English; conversation in pt-br.
 
 ## 1. Problem Statement
 
@@ -162,7 +164,8 @@ Resolution order for screening questions:
 
 ## 10. Open Questions
 
-- None. Requirements and stack frozen. Next artifact: Phase 1 implementation plan.
+- None. Requirements and stack frozen. Implementation progress and remaining
+  credential-dependent checks are recorded in the phase plans and acceptance runbooks.
 
 ## 11. Stack (FROZEN — round "S" resolved)
 

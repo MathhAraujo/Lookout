@@ -18,6 +18,7 @@ from sqlmodel import select
 def test_phase1_api_worker_pdf_contract(session, engine, tmp_path, monkeypatch):
     settings = Settings(
         database_url=engine.url.render_as_string(hide_password=False),
+        workflow_enabled=False,
         kb_path=Path("tests/fixtures/kb"),
         artifacts_dir=tmp_path,
     )
