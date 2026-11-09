@@ -6,10 +6,10 @@ external checks are listed separately below; no real application was submitted.
 ## Verification already completed — 2026-11-09
 
 - Full suite inside the Python 3.12 API image with real PostgreSQL/MinIO:
-  **332 passed** in 68.84 seconds, two dependency deprecation warnings.
+  **349 passed** in 59.56 seconds, two dependency deprecation warnings.
 - Ruff lint passed; formatter check passed for **118 files**.
 - Python wheel build passed.
-- The 33 workflow/operational tests passed against real PostgreSQL 16 and MinIO.
+- The workflow/operational tests passed against real PostgreSQL 16 and MinIO.
 - A binary object survived a MinIO container restart byte for byte.
 - HTTP-stubbed inference plus real Chromium exercised API collection, deduplication,
   scoring, local identity resolution, form screening/filling, zero final POSTs,
@@ -17,6 +17,28 @@ external checks are listed separately below; no real application was submitted.
 - Recovery regressions cover a crash after submission, an obsolete worker lease,
   concurrent application processing, and final-record upload retries without
   repeating a completed submission.
+
+## Final review and answer-scope safeguards
+
+The independent whole-branch review identified three important findings; all
+were addressed in one regression-backed fix pass:
+
+- Qualified or inverted factual questions now require an explicit
+  `question:<wording>` approval. Only an enumerated set of unqualified questions
+  may use a generic class fact. The context normalizer preserves C/C++/C# and
+  currency symbols. Identity fields also require a matching identity label.
+- Reopened forms are checked against their inspected question/control signatures
+  and effective destination before filling and again before a final click.
+  Changed labels, required flags, input types, option values, and destinations
+  downgrade to manual-assist.
+- Unexpected browser inspection failures retain the prepared PDF, store a
+  sanitized error, and downgrade to manual-assist instead of exhausting retries
+  while appearing ready.
+
+The new regressions were observed failing before the fixes. No minor findings
+were deferred. Existing Tasks 1–7 were reused and regression-tested, rather than
+rebuilt. Automatic matching remains opt-in outside the Phase 2 Compose overlay;
+more specific questions intentionally require local user approval.
 
 ## Live fictional OpenRouter check
 
@@ -39,7 +61,8 @@ benchmark. No actual job application or recruiter message was sent.
   worker started. MinIO bucket initialization exited successfully.
 - Infisical `/api/status` and API `/health` returned HTTP 200.
 - Startup applied Alembic through `0003`; `alembic check` reported no new upgrade
-  operations. The API and worker Docker images built successfully.
+  operations. The API and worker Docker images built successfully. Both images
+  matched the verified working tree for all 57 packaged Python/config/template files.
 - The separate fixture worker drove all four lanes through the live API/database.
   Approving a prepared review moved it to dry-run; repeating approval returned 409.
   Three resume PDFs were downloaded through the API. Final form POST count: **0**.

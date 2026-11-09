@@ -14,16 +14,19 @@
 
 - Tasks 1–7: existing implementations and regression tests verified; original
   failing-test checkpoints were not replayed after their modules already existed.
-- Task 8: implemented and verified with 332 passing tests, Ruff lint/format,
-  a wheel build, and 33 workflow/operational tests against real PostgreSQL/MinIO.
+- Task 8: implemented and verified with 349 passing tests, Ruff lint/format,
+  a wheel build, and workflow/operational tests against real PostgreSQL/MinIO.
 - Task 9: isolated full-stack dry-run acceptance passed; the API image ran all
-  332 tests against PostgreSQL/MinIO, both images built, migrations had no drift,
+  349 tests against PostgreSQL/MinIO, both images built, migrations had no drift,
   and the dedicated fixture-worker/live-API smoke passed. Credential-dependent
   external checks are explicitly recorded in the acceptance runbook.
 - Live fictional OpenRouter acceptance passed for EN/PT-BR fact-selection PDFs
   and structured scoring with the selected free model.
 - `WORKFLOW_ENABLED` defaults to false to preserve standalone Phase 1 startup;
   the Phase 2 Compose overlay enables collection-to-matching orchestration.
+
+The final review also tightened question-specific factual approvals and browser
+form-change detection; its regressions are included in the final 349-test suite.
 
 The completed checkboxes below summarize delivered code and verification, including
 historical implementation milestones; they do not claim those old red-test runs
